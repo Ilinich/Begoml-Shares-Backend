@@ -9,21 +9,21 @@ import io.ktor.http.*
 class UserService(
     private val userRepository: UserRepository,
 ) {
-    suspend fun getUser(email: String): User {
-        return userRepository.findByEmail(email) ?: throw CommonException(
+    suspend fun getUser(userId: String): User {
+        return userRepository.findByUserId(userId = userId) ?: throw CommonException(
             status = HttpStatusCode.BadRequest,
             message = "User not found"
         )
     }
 
     suspend fun updateUser(
-        email: String,
+        userId: String,
         updates: UserUpdates,
     ) {
         validRegister(updates)
 
         userRepository.updateUser(
-            email = email,
+            userId = userId,
             updates = updates,
         )
     }

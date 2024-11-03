@@ -11,11 +11,13 @@ class UserController(
     private val userService: UserService,
 ) {
     suspend fun getUser(call: ApplicationCall) {
-        val email = call.safeUser.email
-        val user = userService.getUser(email = email)
+        val userId = call.safeUser.userId
+        val user = userService.getUser(
+            userId = userId,
+        )
         call.respond(
             UserRemoteResponse(
-                id = user.id,
+                id = user.userId,
                 email = user.email,
                 name = user.name,
                 age = user.age,
@@ -24,10 +26,9 @@ class UserController(
     }
 
     suspend fun updateUser(call: ApplicationCall) {
-        val email = call.safeUser.email
         val updates = call.receive<UpdateUserParams>().toUserUpdates()
         userService.updateUser(
-            email = email,
+            userId = call.safeUser.userId,
             updates = updates,
         )
         call.respond(HttpStatusCode.OK)

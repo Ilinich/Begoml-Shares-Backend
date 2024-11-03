@@ -1,9 +1,11 @@
 package com.begoml.shares.app.di
 
 import com.begoml.shares.data.repository.encoder.EncoderRepositoryImpl
+import com.begoml.shares.data.repository.geo.GeoLocationRepositoryImpl
 import com.begoml.shares.data.repository.token.TokenRepositoryImpl
 import com.begoml.shares.data.repository.user.UserRepositoryImpl
 import com.begoml.shares.logic.repositories.encoder.EncoderRepository
+import com.begoml.shares.logic.repositories.geo.GeoLocationRepository
 import com.begoml.shares.logic.repositories.token.TokenRepository
 import com.begoml.shares.logic.repositories.user.UserRepository
 import com.begoml.shares.logic.services.auth.AuthService
@@ -34,6 +36,7 @@ val moduleServices = module {
 
 val moduleRepositories = module {
     single<UserRepository> { UserRepositoryImpl() }
+
     single<TokenRepository> { TokenRepositoryImpl() }
     single<EncoderRepository> { EncoderRepositoryImpl() }
 }

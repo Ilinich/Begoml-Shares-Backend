@@ -27,7 +27,7 @@ dependencies {
 
     implementation(libs.koin.ktor)
 
-    implementation("io.github.microutils:kotlin-logging:2.0.10")
+    implementation(libs.kotlin.logging)
     implementation("org.slf4j:slf4j-api:1.7.30")
     implementation("ch.qos.logback:logback-classic:1.2.3")
 }

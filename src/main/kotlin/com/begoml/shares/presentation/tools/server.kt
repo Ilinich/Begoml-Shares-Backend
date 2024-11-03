@@ -8,4 +8,7 @@ val ApplicationCall.safeUser
         "Token is broken!"
     }
 
-data class UserPrincipal(val email: String) : Principal
+data class UserPrincipal(
+    val userId: String,
+    val email: String,
+) : Principal

@@ -1,7 +1,9 @@
 [versions]
 ktor = "2.3.3"
 exposed = "0.41.1"
-koin="3.4.3"
+koin = "3.4.3"
+
+kotlin-logging = "2.0.10"
 
 [libraries]
 # Auth
@@ -25,6 +27,8 @@ exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "e
 exposed-dao = { module = "org.jetbrains.exposed:exposed-dao", version.ref = "exposed" }
 exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
 
+# Logging
+kotlin-logging = { module = "io.github.microutils:kotlin-logging", version.ref = "kotlin-logging" }
 
 [bundles]
 ktor-server = [

@@ -11,9 +11,17 @@ import com.begoml.shares.app.plugins.statuspages.statusPages
 import io.ktor.server.application.*
 import io.ktor.server.cio.*
 import io.ktor.server.engine.*
+import org.jetbrains.exposed.sql.Database
 import org.koin.ktor.plugin.Koin
 
 fun main() {
+    Database.connect(
+        url = "jdbc:postgresql://localhost:5432/begomlshares",
+        driver = "org.postgresql.Driver",
+        user = "postgres",
+        password = "Postgres383",
+    )
+
     embeddedServer(
         factory = CIO,
         port = 8080,

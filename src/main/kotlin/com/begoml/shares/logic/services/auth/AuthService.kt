@@ -14,7 +14,7 @@ class AuthService(
     private val encoderRepository: EncoderRepository,
 ) {
     suspend fun createUserByEmail(email: String, password: String): String {
-        val searchUser = userRepository.findByEmail(email)
+        val searchUser = userRepository.findByUserId(email)
 
         if (searchUser != null) {
             throw CommonException(
@@ -25,19 +25,16 @@ class AuthService(
 
         validateAuthData(email = email, password = password)
 
-        userRepository.createUser(
+        val user = userRepository.createUser(
             email = email,
             password = encoderRepository.encrypt(password),
         )
-
-        val user = userRepository.findByEmail(email)
-        checkNotNull(user)
 
         return generateJwtToken(user)
     }
 
     suspend fun loginByEmail(email: String, password: String): String {
-        val user = userRepository.findByEmail(email)
+        val user = userRepository.findByUserId(email)
         checkNotNull(user)
 
         if (user.password != encoderRepository.encrypt(password)) {
