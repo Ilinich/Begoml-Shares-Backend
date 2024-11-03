@@ -1,9 +1,6 @@
 package com.begoml.shares.app
 
-import com.begoml.shares.app.di.moduleControllers
-import com.begoml.shares.app.di.moduleRepositories
-import com.begoml.shares.app.di.moduleServices
-import com.begoml.shares.app.di.moduleTools
+import com.begoml.shares.app.di.*
 import com.begoml.shares.app.plugins.authentication.authentication
 import com.begoml.shares.app.plugins.routing.configureRouting
 import com.begoml.shares.app.plugins.serialization.configureSerialization
@@ -11,17 +8,9 @@ import com.begoml.shares.app.plugins.statuspages.statusPages
 import io.ktor.server.application.*
 import io.ktor.server.cio.*
 import io.ktor.server.engine.*
-import org.jetbrains.exposed.sql.Database
 import org.koin.ktor.plugin.Koin
 
 fun main() {
-    Database.connect(
-        url = "jdbc:postgresql://localhost:5432/begomlshares",
-        driver = "org.postgresql.Driver",
-        user = "postgres",
-        password = "Postgres383",
-    )
-
     embeddedServer(
         factory = CIO,
         port = 8080,
@@ -37,6 +26,7 @@ fun Application.module() {
         modules(moduleServices)
         modules(moduleRepositories)
         modules(moduleTools)
+        modules(moduleDatabase)
     }
 
     authentication()

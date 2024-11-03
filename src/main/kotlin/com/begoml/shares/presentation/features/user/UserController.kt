@@ -17,7 +17,7 @@ class UserController(
         )
         call.respond(
             UserRemoteResponse(
-                id = user.userId,
+                id = user.id,
                 email = user.email,
                 name = user.name,
                 age = user.age,

@@ -10,5 +10,4 @@ val ApplicationCall.safeUser
 
 data class UserPrincipal(
     val userId: String,
-    val email: String,
 ) : Principal

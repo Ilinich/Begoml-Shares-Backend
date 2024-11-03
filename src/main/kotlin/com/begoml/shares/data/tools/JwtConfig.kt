@@ -5,6 +5,7 @@ import com.auth0.jwt.JWTVerifier
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.interfaces.DecodedJWT
 import com.begoml.shares.logic.services.user.models.User
+import com.begoml.shares.tools.USER_ID_KEY
 import java.util.*
 
 object JwtConfig {
@@ -29,7 +30,7 @@ object JwtConfig {
         .withSubject("Authentication")
         .withIssuer(issuer)
         .withJWTId(UUID.randomUUID().toString())
-        .withClaim("email", user.email)
+        .withClaim(USER_ID_KEY, user.id)
         .withClaim("name", user.name)
         .withExpiresAt(getExpiration())
         .withIssuedAt(Date())

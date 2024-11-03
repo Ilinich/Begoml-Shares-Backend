@@ -19,7 +19,11 @@ class DatabaseProvider(
     }
 
     fun getDatabase(userId: String): Database {
-        val shardIndex = UUID.fromString(userId).hashCode().absoluteValue % shards.size
-        return shards[shardIndex]
+        return if (shards.size == 1) {
+            return shards[0]
+        } else {
+            val shardIndex = UUID.fromString(userId).hashCode().absoluteValue % shards.size
+            shards[shardIndex]
+        }
     }
 }

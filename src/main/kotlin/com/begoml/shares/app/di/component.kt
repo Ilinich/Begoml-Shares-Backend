@@ -1,11 +1,10 @@
 package com.begoml.shares.app.di
 
+import com.begoml.shares.data.database.DatabaseProvider
 import com.begoml.shares.data.repository.encoder.EncoderRepositoryImpl
-import com.begoml.shares.data.repository.geo.GeoLocationRepositoryImpl
 import com.begoml.shares.data.repository.token.TokenRepositoryImpl
 import com.begoml.shares.data.repository.user.UserRepositoryImpl
 import com.begoml.shares.logic.repositories.encoder.EncoderRepository
-import com.begoml.shares.logic.repositories.geo.GeoLocationRepository
 import com.begoml.shares.logic.repositories.token.TokenRepository
 import com.begoml.shares.logic.repositories.user.UserRepository
 import com.begoml.shares.logic.services.auth.AuthService
@@ -15,6 +14,7 @@ import com.begoml.shares.presentation.features.auth.registration.RegistrationCon
 import com.begoml.shares.presentation.features.user.UserController
 import mu.KLogger
 import mu.KotlinLogging
+import org.jetbrains.exposed.sql.Database
 import org.koin.dsl.module
 
 val moduleControllers = module {
@@ -35,7 +35,11 @@ val moduleServices = module {
 }
 
 val moduleRepositories = module {
-    single<UserRepository> { UserRepositoryImpl() }
+    single<UserRepository> {
+        UserRepositoryImpl(
+            databaseProvider = get(),
+        )
+    }
 
     single<TokenRepository> { TokenRepositoryImpl() }
     single<EncoderRepository> { EncoderRepositoryImpl() }
@@ -43,4 +47,28 @@ val moduleRepositories = module {
 
 val moduleTools = module {
     single<KLogger> { KotlinLogging.logger {} }
+}
+
+val moduleDatabase = module {
+    single { provideDatabaseProvider() }
+}
+
+fun provideDatabaseProvider(): DatabaseProvider {
+    val shard1 = Database.connect(
+        url = "jdbc:postgresql://localhost:5432/begomlshares",
+        driver = "org.postgresql.Driver",
+        user = "postgres",
+        password = "Postgres383",
+    )
+
+    val shard2 = Database.connect(
+        url = "jdbc:postgresql://localhost:5432/begomlshares",
+        driver = "org.postgresql.Driver",
+        user = "postgres",
+        password = "Postgres383",
+    )
+
+    val shards = listOf(shard1, shard2)
+
+    return DatabaseProvider(shards)
 }

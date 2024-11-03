@@ -129,8 +129,7 @@ components:
       type: object
       properties:
         id:
-          type: integer
-          example: 1
+          type: string
         email:
           type: string
           example: "user@example.com"

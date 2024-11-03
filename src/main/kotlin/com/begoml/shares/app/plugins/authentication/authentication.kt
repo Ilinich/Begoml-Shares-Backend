@@ -2,6 +2,7 @@ package com.begoml.shares.app.plugins.authentication
 
 import com.begoml.shares.logic.repositories.token.TokenRepository
 import com.begoml.shares.presentation.tools.UserPrincipal
+import com.begoml.shares.tools.USER_ID_KEY
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
@@ -16,9 +17,9 @@ fun Application.authentication() {
             realm = "com.begoml.shares"
 
             validate { payloadHolder ->
-                val email = payloadHolder.payload.getClaim("email").asString()
-                if (email != null) {
-                    UserPrincipal(email = email)
+                val userId = payloadHolder.payload.getClaim(USER_ID_KEY).asString()
+                if (userId != null) {
+                    UserPrincipal(userId = userId)
                 } else {
                     null
                 }
