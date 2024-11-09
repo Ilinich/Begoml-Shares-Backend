@@ -24,7 +24,7 @@ dependencies {
     implementation(libs.ktor.swagger)
 
     implementation(libs.bundles.exposed)
-    implementation("org.postgresql:postgresql:42.5.0")
+    implementation("org.postgresql:postgresql:42.7.2")
 
     implementation(libs.koin.ktor)
 

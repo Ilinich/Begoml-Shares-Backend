@@ -1,5 +1,8 @@
 package com.begoml.shares.app.di
 
+import com.begoml.shares.app.DATABASE_PASSWORD
+import com.begoml.shares.app.DATABASE_URL
+import com.begoml.shares.app.DATABASE_USER
 import com.begoml.shares.data.database.DatabaseProvider
 import com.begoml.shares.data.repository.encoder.EncoderRepositoryImpl
 import com.begoml.shares.data.repository.token.TokenRepositoryImpl
@@ -55,20 +58,22 @@ val moduleDatabase = module {
 
 fun provideDatabaseProvider(): DatabaseProvider {
     val shard1 = Database.connect(
-        url = "jdbc:postgresql://localhost:5432/begomlshares",
+        url = DATABASE_URL,
         driver = "org.postgresql.Driver",
-        user = "postgres",
-        password = "Postgres383",
+        user = DATABASE_USER,
+        password = DATABASE_PASSWORD,
     )
 
     val shard2 = Database.connect(
-        url = "jdbc:postgresql://localhost:5432/begomlshares",
+        url = DATABASE_URL, // TODO changed
         driver = "org.postgresql.Driver",
-        user = "postgres",
-        password = "Postgres383",
+        user = DATABASE_USER,
+        password = DATABASE_PASSWORD,
     )
 
     val shards = listOf(shard1, shard2)
 
-    return DatabaseProvider(shards)
+    return DatabaseProvider(
+        physicalShards = shards,
+    )
 }

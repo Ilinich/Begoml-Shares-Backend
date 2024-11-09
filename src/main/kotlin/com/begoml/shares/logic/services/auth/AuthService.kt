@@ -14,7 +14,7 @@ class AuthService(
     private val encoderRepository: EncoderRepository,
 ) {
     suspend fun createUserByEmail(email: String, password: String): String {
-        val searchUser = userRepository.findByUserId(email)
+        val searchUser = userRepository.findUserByEmail(email)
 
         if (searchUser != null) {
             throw CommonException(
@@ -34,7 +34,7 @@ class AuthService(
     }
 
     suspend fun loginByEmail(email: String, password: String): String {
-        val user = userRepository.findByUserId(email)
+        val user = userRepository.findUserByEmail(email = email)
         checkNotNull(user)
 
         if (user.password != encoderRepository.encrypt(password)) {

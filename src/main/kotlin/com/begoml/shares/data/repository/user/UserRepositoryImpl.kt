@@ -21,6 +21,17 @@ class UserRepositoryImpl(
         }
     }
 
+    override suspend fun findUserByEmail(email: String): User? {
+        return databaseProvider.getShards()
+            .parallelStream().map { shard ->
+                transaction(shard) {
+                    UserData.select { UserData.email eq email }
+                        .map(UserData::toDomain)
+                        .firstOrNull()
+                }
+            }.findFirst().orElseGet(null)
+    }
+
     override suspend fun updateUser(userId: String, updates: UserUpdates) {
         transaction(databaseProvider.getDatabase(userId)) {
             UserData.update({ UserData.userId eq userId }) { row ->

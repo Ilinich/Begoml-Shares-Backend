@@ -8,22 +8,15 @@ import com.begoml.shares.app.plugins.statuspages.statusPages
 import io.ktor.server.application.*
 import io.ktor.server.cio.*
 import io.ktor.server.engine.*
-import org.jetbrains.exposed.sql.Database
 import org.koin.ktor.plugin.Koin
 import java.sql.DriverManager
 
-val DATABASE_URL = "jdbc:postgresql://localhost:5432/begomlshare"
+val DATABASE_URL = "jdbc:postgresql://localhost:5432/begoml_share"
 val DATABASE_USER = "postgres"
 val DATABASE_PASSWORD = "Postgres383"
 
 fun main() {
     updatePostgresConfig()
-    Database.connect(
-        url = DATABASE_URL,
-        driver = "org.postgresql.Driver",
-        user = DATABASE_USER,
-        password = DATABASE_PASSWORD,
-    )
 
     embeddedServer(
         factory = CIO,

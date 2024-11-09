@@ -5,6 +5,8 @@ import com.begoml.shares.logic.services.user.models.params.UserUpdates
 
 interface UserRepository {
 
+    suspend fun findUserByEmail(email: String): User?
+
     suspend fun findByUserId(userId: String): User?
 
     suspend fun createUser(email: String, password: String): User
