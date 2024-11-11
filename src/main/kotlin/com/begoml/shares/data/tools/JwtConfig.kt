@@ -31,7 +31,6 @@ object JwtConfig {
         .withIssuer(issuer)
         .withJWTId(UUID.randomUUID().toString())
         .withClaim(USER_ID_KEY, user.id)
-        .withClaim("name", user.name)
         .withExpiresAt(getExpiration())
         .withIssuedAt(Date())
         .sign(algorithm)

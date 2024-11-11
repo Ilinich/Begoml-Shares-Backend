@@ -12,11 +12,13 @@ import org.koin.ktor.plugin.Koin
 import java.sql.DriverManager
 
 val DATABASE_URL = "jdbc:postgresql://localhost:5432/begoml_share"
+val DATABASE_URL_SECOND = "jdbc:postgresql://localhost:5432/begoml_shares_second"
 val DATABASE_USER = "postgres"
 val DATABASE_PASSWORD = "Postgres383"
 
 fun main() {
-    updatePostgresConfig()
+    updatePostgresConfig(DATABASE_URL)
+    updatePostgresConfig(DATABASE_URL_SECOND)
 
     embeddedServer(
         factory = CIO,
@@ -42,9 +44,9 @@ fun Application.module() {
     configureSerialization()
 }
 
-fun updatePostgresConfig() {
+fun updatePostgresConfig(url: String) {
     runCatching {
-        DriverManager.getConnection(DATABASE_URL, DATABASE_USER, DATABASE_PASSWORD).use { connection ->
+        DriverManager.getConnection(url, DATABASE_USER, DATABASE_PASSWORD).use { connection ->
             connection.createStatement().use { stmt ->
                 stmt.execute("ALTER SYSTEM SET max_wal_senders = 3;")
                 stmt.execute("ALTER SYSTEM SET wal_level = 'replica';")

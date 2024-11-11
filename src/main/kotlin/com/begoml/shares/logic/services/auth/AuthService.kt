@@ -35,7 +35,10 @@ class AuthService(
 
     suspend fun loginByEmail(email: String, password: String): String {
         val user = userRepository.findUserByEmail(email = email)
-        checkNotNull(user)
+            ?: throw CommonException(
+                status = HttpStatusCode.BadRequest,
+                message = "User not found!",
+            )
 
         if (user.password != encoderRepository.encrypt(password)) {
             throw CommonException(

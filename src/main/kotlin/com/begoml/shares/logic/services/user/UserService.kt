@@ -3,6 +3,7 @@ package com.begoml.shares.logic.services.user
 import com.begoml.shares.logic.exceptions.CommonException
 import com.begoml.shares.logic.repositories.user.UserRepository
 import com.begoml.shares.logic.services.user.models.User
+import com.begoml.shares.logic.services.user.models.UserProfile
 import com.begoml.shares.logic.services.user.models.params.UserUpdates
 import io.ktor.http.*
 
@@ -14,6 +15,10 @@ class UserService(
             status = HttpStatusCode.BadRequest,
             message = "User not found"
         )
+    }
+
+    suspend fun getUserProfile(userId: String): UserProfile? {
+        return userRepository.findByUserProfileId(userId = userId)
     }
 
     suspend fun updateUser(

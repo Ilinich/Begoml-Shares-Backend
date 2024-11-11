@@ -1,6 +1,7 @@
 package com.begoml.shares.presentation.features.user
 
 import com.begoml.shares.logic.services.user.UserService
+import com.begoml.shares.presentation.exceptions.handleExceptions
 import com.begoml.shares.presentation.tools.safeUser
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -11,18 +12,21 @@ class UserController(
     private val userService: UserService,
 ) {
     suspend fun getUser(call: ApplicationCall) {
-        val userId = call.safeUser.userId
-        val user = userService.getUser(
-            userId = userId,
-        )
-        call.respond(
-            UserRemoteResponse(
-                id = user.id,
-                email = user.email,
-                name = user.name,
-                age = user.age,
+        call.handleExceptions {
+            val userId = call.safeUser.userId
+
+            val user = userService.getUser(userId = userId)
+            val userProfile = userService.getUserProfile(userId = userId)
+
+            call.respond(
+                UserRemoteResponse(
+                    id = userId,
+                    email = user.email,
+                    name = userProfile?.name.orEmpty(),
+                    age = userProfile?.age,
+                )
             )
-        )
+        }
     }
 
     suspend fun updateUser(call: ApplicationCall) {

@@ -1,13 +1,16 @@
 package com.begoml.shares.data.repository.user
 
 import com.begoml.shares.data.database.DatabaseProvider
-import com.begoml.shares.data.database.UserData
+import com.begoml.shares.data.database.models.UserData
+import com.begoml.shares.data.database.models.UserProfileData
 import com.begoml.shares.logic.repositories.user.UserRepository
 import com.begoml.shares.logic.services.user.models.User
+import com.begoml.shares.logic.services.user.models.UserProfile
 import com.begoml.shares.logic.services.user.models.params.UserUpdates
-import com.begoml.shares.tools.EMPTY_STRING
-import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.insertAndGetId
+import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.update
 import java.util.*
 
 class UserRepositoryImpl(
@@ -21,20 +24,30 @@ class UserRepositoryImpl(
         }
     }
 
+    override suspend fun findByUserProfileId(userId: String): UserProfile? {
+        return transaction(databaseProvider.getDatabase(userId)) {
+            UserProfileData.select { UserProfileData.userId eq userId }
+                .map(UserProfileData::toDomain).firstOrNull()
+        }
+    }
+
     override suspend fun findUserByEmail(email: String): User? {
-        return databaseProvider.getShards()
-            .parallelStream().map { shard ->
-                transaction(shard) {
-                    UserData.select { UserData.email eq email }
-                        .map(UserData::toDomain)
-                        .firstOrNull()
-                }
-            }.findFirst().orElseGet(null)
+        val shards = databaseProvider.getShards()
+//TOD parallel map
+        val results = shards.mapNotNull { shard ->
+            transaction(shard) {
+                UserData.select { UserData.email eq email }
+                    .map(UserData::toDomain)
+                    .firstOrNull()
+            }
+        }
+
+        return results.firstOrNull()
     }
 
     override suspend fun updateUser(userId: String, updates: UserUpdates) {
         transaction(databaseProvider.getDatabase(userId)) {
-            UserData.update({ UserData.userId eq userId }) { row ->
+            UserProfileData.update({ UserProfileData.userId eq userId }) { row ->
                 if (updates.name != null) {
                     row[username] = updates.name
                 }
@@ -51,7 +64,6 @@ class UserRepositoryImpl(
             UserData.insertAndGetId { row ->
                 row[UserData.userId] = userId
                 row[UserData.email] = email
-                row[username] = EMPTY_STRING
                 row[UserData.password] = password
             }
 

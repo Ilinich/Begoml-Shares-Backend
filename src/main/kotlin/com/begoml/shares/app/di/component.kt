@@ -2,6 +2,7 @@ package com.begoml.shares.app.di
 
 import com.begoml.shares.app.DATABASE_PASSWORD
 import com.begoml.shares.app.DATABASE_URL
+import com.begoml.shares.app.DATABASE_URL_SECOND
 import com.begoml.shares.app.DATABASE_USER
 import com.begoml.shares.data.database.DatabaseProvider
 import com.begoml.shares.data.repository.encoder.EncoderRepositoryImpl
@@ -65,7 +66,7 @@ fun provideDatabaseProvider(): DatabaseProvider {
     )
 
     val shard2 = Database.connect(
-        url = DATABASE_URL, // TODO changed
+        url = DATABASE_URL_SECOND,
         driver = "org.postgresql.Driver",
         user = DATABASE_USER,
         password = DATABASE_PASSWORD,
