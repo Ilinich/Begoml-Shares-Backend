@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 data class UserRemoteResponse(
     val id: String,
     val email: String,
-    val name: String,
+    val name: String?,
     val age: Int?,
 )
 

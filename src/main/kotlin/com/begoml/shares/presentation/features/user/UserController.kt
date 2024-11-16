@@ -22,7 +22,7 @@ class UserController(
                 UserRemoteResponse(
                     id = userId,
                     email = user.email,
-                    name = userProfile?.name.orEmpty(),
+                    name = userProfile?.name,
                     age = userProfile?.age,
                 )
             )
