@@ -1,0 +1,156 @@
+openapi: 3.0.0
+info:
+  title: Begoml Shares API
+  version: 0.1.0
+  description: API for an application to buy and sell shares.
+
+paths:
+  /login:
+    post:
+      summary: User Login
+      description: Allows a user to log into the system using their email and password.
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginParams'
+      responses:
+        '200':
+          description: Successful response with token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginRemoteResponse'
+
+  /registration:
+    post:
+      summary: User Registration
+      description: Allows a new user to register in the system using their email and password.
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationParams'
+      responses:
+        '200':
+          description: Successful registration with token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationRemoteResponse'
+
+  /user:
+    get:
+      summary: Get User Profile
+      description: Retrieves the profile information of the authenticated user.
+      tags:
+        - User
+      responses:
+        '200':
+          description: Successful response with user data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRemoteResponse'
+
+  /user/update:
+    post:
+      summary: Update User Profile
+      description: Updates the profile information of the authenticated user.
+      tags:
+        - User
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserParams'
+      responses:
+        '200':
+          description: Successful update response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User profile updated successfully."
+
+components:
+  schemas:
+    LoginParams:
+      type: object
+      properties:
+        login:
+          type: string
+          example: "user@example.com"
+        password:
+          type: string
+          example: "password"
+      required:
+        - login
+        - password
+
+    LoginRemoteResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          example: "jwt-token"
+
+    RegistrationParams:
+      type: object
+      properties:
+        login:
+          type: string
+          example: "newuser@example.com"
+        password:
+          type: string
+          example: "newpassword"
+      required:
+        - login
+        - password
+
+    RegistrationRemoteResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          example: "jwt-token"
+
+    UserRemoteResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          example: "user@example.com"
+        name:
+          type: string
+          example: "John Doe"
+        age:
+          type: integer
+          nullable: true
+          example: 30
+      required:
+        - id
+        - email
+
+    UpdateUserParams:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "John Doe"
+        age:
+          type: integer
+          nullable: true
+          example: 31
