@@ -44,18 +44,47 @@ fun Application.module() {
     configureSerialization()
 }
 
+/**
+ * Updates PostgreSQL configuration to enable replication and allow remote connections.
+ *
+ * The method establishes a connection to the PostgreSQL server using the provided URL,
+ * then executes a series of SQL commands to modify system parameters:
+ *
+ * - `max_wal_senders`: Sets the maximum number of replication sender processes.
+ * - `wal_level`: Sets the level of write-ahead logging to support replication.
+ * - `max_replication_slots`: Configures the maximum number of replication slots available.
+ * - `listen_addresses`: Allows the server to accept connections from any network interface.
+ *
+ * Finally, it reloads the server configuration and ensures a replication role exists.
+ *
+ * @param url the JDBC URL to connect to the PostgreSQL database.
+ *
+ * @throws SQLException if an error occurs while executing SQL commands.
+ * @throws IllegalArgumentException if the provided URL is invalid or null.
+ */
 fun updatePostgresConfig(url: String) {
     runCatching {
         DriverManager.getConnection(url, DATABASE_USER, DATABASE_PASSWORD).use { connection ->
             connection.createStatement().use { stmt ->
+
                 stmt.execute("ALTER SYSTEM SET max_wal_senders = 3;")
                 stmt.execute("ALTER SYSTEM SET wal_level = 'replica';")
+                stmt.execute("ALTER SYSTEM SET max_replication_slots = 1;")
+                stmt.execute("ALTER SYSTEM SET listen_addresses = '*';")
+
                 stmt.execute("SELECT pg_reload_conf();")
+
+                stmt.execute("""
+                    DO $$ BEGIN
+                        IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'replicator') THEN
+                            CREATE ROLE replicator WITH REPLICATION LOGIN PASSWORD 'replicator_password';
+                        END IF;
+                    END $$;
+                """.trimIndent())
             }
-            println("PostgreSQL configuration updated successfully.")
         }
     }.onFailure { exception ->
-        println("Error updating PostgreSQL configuration: ${exception.message}")
+        println("Error updating PostgreSQL configuration for $url: ${exception.message}")
         exception.printStackTrace()
     }
 }
