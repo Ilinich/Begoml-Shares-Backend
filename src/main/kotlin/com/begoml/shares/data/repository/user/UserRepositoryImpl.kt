@@ -7,6 +7,7 @@ import com.begoml.shares.logic.repositories.user.UserRepository
 import com.begoml.shares.logic.services.user.models.User
 import com.begoml.shares.logic.services.user.models.UserProfile
 import com.begoml.shares.logic.services.user.models.params.UserUpdates
+import com.begoml.shares.tools.parallelMap
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -33,8 +34,8 @@ class UserRepositoryImpl(
 
     override suspend fun findUserByEmail(email: String): User? {
         val shards = databaseProvider.getShards()
-//TOD parallel map
-        val results = shards.mapNotNull { shard ->
+
+        val results = shards.parallelMap { shard ->
             transaction(shard) {
                 UserData.select { UserData.email eq email }
                     .map(UserData::toDomain)
