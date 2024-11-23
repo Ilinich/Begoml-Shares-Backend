@@ -8,9 +8,11 @@ import com.begoml.shares.data.database.DatabaseProvider
 import com.begoml.shares.data.repository.encoder.EncoderRepositoryImpl
 import com.begoml.shares.data.repository.token.TokenRepositoryImpl
 import com.begoml.shares.data.repository.user.UserRepositoryImpl
+import com.begoml.shares.data.repository.wallet.UserWalletRepositoryImpl
 import com.begoml.shares.logic.repositories.encoder.EncoderRepository
 import com.begoml.shares.logic.repositories.token.TokenRepository
 import com.begoml.shares.logic.repositories.user.UserRepository
+import com.begoml.shares.logic.repositories.wallet.UserWalletRepository
 import com.begoml.shares.logic.services.auth.AuthService
 import com.begoml.shares.logic.services.user.UserService
 import com.begoml.shares.presentation.features.auth.login.LoginController
@@ -41,6 +43,12 @@ val moduleServices = module {
 val moduleRepositories = module {
     single<UserRepository> {
         UserRepositoryImpl(
+            databaseProvider = get(),
+        )
+    }
+
+    single<UserWalletRepository> {
+        UserWalletRepositoryImpl(
             databaseProvider = get(),
         )
     }

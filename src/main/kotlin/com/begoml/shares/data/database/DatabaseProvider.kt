@@ -1,7 +1,8 @@
 package com.begoml.shares.data.database
 
-import com.begoml.shares.data.database.models.UserData
-import com.begoml.shares.data.database.models.UserProfileData
+import com.begoml.shares.data.database.models.user.UserData
+import com.begoml.shares.data.database.models.user.UserProfileData
+import com.begoml.shares.data.database.models.wallet.UserWalletData
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -51,7 +52,11 @@ class DatabaseProvider(
     init {
         physicalShards.forEach { db ->
             transaction(db) {
-                SchemaUtils.create(UserData, UserProfileData)
+                SchemaUtils.create(
+                    UserData,
+                    UserProfileData,
+                    UserWalletData,
+                )
             }
         }
     }

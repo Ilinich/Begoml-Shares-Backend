@@ -1,8 +1,8 @@
 package com.begoml.shares.data.repository.user
 
 import com.begoml.shares.data.database.DatabaseProvider
-import com.begoml.shares.data.database.models.UserData
-import com.begoml.shares.data.database.models.UserProfileData
+import com.begoml.shares.data.database.models.user.UserData
+import com.begoml.shares.data.database.models.user.UserProfileData
 import com.begoml.shares.logic.repositories.user.UserRepository
 import com.begoml.shares.logic.services.user.models.User
 import com.begoml.shares.logic.services.user.models.UserProfile
