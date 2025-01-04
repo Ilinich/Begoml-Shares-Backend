@@ -3,6 +3,7 @@ package com.begoml.shares.presentation.features.wallet
 import com.begoml.shares.logic.repositories.wallet.UserWallet
 import com.begoml.shares.logic.services.confirmation.ConfirmationCodeService
 import com.begoml.shares.logic.services.wallet.UserWalletService
+import com.begoml.shares.presentation.exceptions.handleExceptions
 import com.begoml.shares.presentation.tools.safeUser
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -14,66 +15,76 @@ class UserWalletController(
     private val confirmationCodeService: ConfirmationCodeService,
 ) {
 
-
     suspend fun getWallet(call: ApplicationCall) {
-        val userId = call.safeUser.userId
+        call.handleExceptions {
+            val userId = call.safeUser.userId
 
-        val wallet = walletService.getWallet(userId)
-        call.respond(wallet.toUserWalletResponse())
+            val wallet = walletService.getWallet(userId)
+            call.respond(wallet.toUserWalletResponse())
+        }
     }
 
     suspend fun createWallet(call: ApplicationCall) {
-        val userId = call.safeUser.userId
+        call.handleExceptions {
+            val userId = call.safeUser.userId
+            val params = call.receive<UserWalletNameRemoteParams>()
 
-        require(walletService.findWallet(userId) == null)
+            require(walletService.findWallet(userId) == null)
 
-        walletService.createWallet(userId)
+            walletService.createWallet(userId = userId, name = params.name)
 
-        val wallet = requireNotNull(walletService.getWallet(userId))
+            val wallet = requireNotNull(walletService.getWallet(userId))
 
-        call.respond(HttpStatusCode.Created, wallet.toUserWalletResponse())
+            call.respond(HttpStatusCode.Created, wallet.toUserWalletResponse())
+        }
     }
 
     suspend fun updateName(call: ApplicationCall) {
-        val userId = call.safeUser.userId
-        val params = call.receive<UserWalletNameRemoteParams>()
+        call.handleExceptions {
+            val userId = call.safeUser.userId
+            val params = call.receive<UserWalletNameRemoteParams>()
 
-        walletService.updateName(
-            userId = userId,
-            newWalletName = params.name,
-        )
+            walletService.updateName(
+                userId = userId,
+                newWalletName = params.name,
+            )
 
-        call.respond(HttpStatusCode.OK)
+            call.respond(HttpStatusCode.OK)
+        }
     }
 
     suspend fun deposit(call: ApplicationCall) {
-        val userId = call.safeUser.userId
-        val params = call.receive<UserWalletDepositRemoteParams>()
+        call.handleExceptions {
+            val userId = call.safeUser.userId
+            val params = call.receive<UserWalletDepositRemoteParams>()
 
-        walletService.checkRateLimit(userId)
+            walletService.checkRateLimit(userId)
 
-        if (!verifyConfirmationCode(userId = userId, confirmationCode = params.confirmationCode)) {
-            call.respond(HttpStatusCode.Forbidden, "Invalid confirmation code")
-            return
+            if (!verifyConfirmationCode(userId = userId, confirmationCode = params.confirmationCode)) {
+                call.respond(HttpStatusCode.Forbidden, "Invalid confirmation code")
+                return@handleExceptions
+            }
+
+            walletService.addBalance(userId = userId, newBalance = params.amount)
+            call.respond(HttpStatusCode.OK, "Deposit successful")
         }
-
-        walletService.addBalance(userId = userId, newBalance = params.amount)
-        call.respond(HttpStatusCode.OK, "Deposit successful")
     }
 
     suspend fun withdraw(call: ApplicationCall) {
-        val userId = call.safeUser.userId
-        val params = call.receive<UserWalletWithdrawRemoteParams>()
+        call.handleExceptions {
+            val userId = call.safeUser.userId
+            val params = call.receive<UserWalletWithdrawRemoteParams>()
 
-        walletService.checkRateLimit(userId)
+            walletService.checkRateLimit(userId)
 
-        if (!verifyConfirmationCode(userId = userId, confirmationCode = params.confirmationCode)) {
-            call.respond(HttpStatusCode.Forbidden, "Invalid confirmation code")
-            return
+            if (!verifyConfirmationCode(userId = userId, confirmationCode = params.confirmationCode)) {
+                call.respond(HttpStatusCode.Forbidden, "Invalid confirmation code")
+                return@handleExceptions
+            }
+
+            walletService.addBalance(userId = userId, newBalance = params.amount.negate())
+            call.respond(HttpStatusCode.OK, "Withdrawal successful")
         }
-
-        walletService.addBalance(userId = userId, newBalance = params.amount.negate())
-        call.respond(HttpStatusCode.OK, "Withdrawal successful")
     }
 
     private suspend fun verifyConfirmationCode(userId: String, confirmationCode: String): Boolean {

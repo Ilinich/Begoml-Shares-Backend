@@ -6,7 +6,7 @@ interface UserWalletRepository {
 
     suspend fun findWalletByUserId(userId: String): UserWallet?
 
-    suspend fun createWallet(userId: String)
+    suspend fun createWallet(userId: String, name: String)
 
     suspend fun updateName(userId: String, newWalletName: String)
 

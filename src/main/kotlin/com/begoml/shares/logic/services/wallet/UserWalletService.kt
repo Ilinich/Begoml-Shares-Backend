@@ -18,8 +18,8 @@ class UserWalletService(
         return walletRepository.findWalletByUserId(userId)
     }
 
-    suspend fun createWallet(userId: String) {
-        return walletRepository.createWallet(userId)
+    suspend fun createWallet(userId: String, name: String) {
+        return walletRepository.createWallet(userId = userId, name = name)
     }
 
     suspend fun updateName(userId: String, newWalletName: String) {

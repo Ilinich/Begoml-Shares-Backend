@@ -24,10 +24,11 @@ class UserWalletRepositoryImpl(
         }
     }
 
-    override suspend fun createWallet(userId: String) {
+    override suspend fun createWallet(userId: String, name: String) {
         transaction(databaseProvider.getDatabase(userId)) {
             UserWalletData.insert { row ->
                 row[walletId] = UUID.randomUUID().toString()
+                row[UserWalletData.name] = name
                 row[UserWalletData.userId] = userId
             }
         }
