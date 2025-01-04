@@ -15,6 +15,7 @@ import com.begoml.shares.logic.repositories.user.UserRepository
 import com.begoml.shares.logic.repositories.wallet.UserWalletRepository
 import com.begoml.shares.logic.services.auth.AuthService
 import com.begoml.shares.logic.services.user.UserService
+import com.begoml.shares.logic.services.wallet.UserWalletService
 import com.begoml.shares.presentation.features.auth.login.LoginController
 import com.begoml.shares.presentation.features.auth.registration.RegistrationController
 import com.begoml.shares.presentation.features.user.UserController
@@ -38,20 +39,14 @@ val moduleServices = module {
             encoderRepository = get(),
         )
     }
+
+    single { UserWalletService(walletRepository = get()) }
 }
 
 val moduleRepositories = module {
-    single<UserRepository> {
-        UserRepositoryImpl(
-            databaseProvider = get(),
-        )
-    }
+    single<UserRepository> { UserRepositoryImpl(databaseProvider = get()) }
 
-    single<UserWalletRepository> {
-        UserWalletRepositoryImpl(
-            databaseProvider = get(),
-        )
-    }
+    single<UserWalletRepository> { UserWalletRepositoryImpl(databaseProvider = get()) }
 
     single<TokenRepository> { TokenRepositoryImpl() }
     single<EncoderRepository> { EncoderRepositoryImpl() }
