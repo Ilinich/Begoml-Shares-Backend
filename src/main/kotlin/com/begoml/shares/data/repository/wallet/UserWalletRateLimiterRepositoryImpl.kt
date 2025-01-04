@@ -9,7 +9,7 @@ class UserWalletRateLimiterRepositoryImpl(
 ) : UserWalletRateLimiterRepository {
 
     override suspend fun checkRateLimit(userId: String) {
-        val key = "rate_limit:$userId"
+        val key = "user_wallet_rate_limit:$userId"
 
         val currentCount = redisClient.get(key)?.toIntOrNull() ?: 0
 
