@@ -15,5 +15,17 @@ fun Route.walletRoutes() {
         post("/wallet/create") {
             controller.createWallet(context)
         }
+
+        post("/wallet/update/name") {
+            controller.updateName(context)
+        }
+
+        post("/wallet/deposit") {
+            controller.deposit(context)
+        }
+
+        post("/wallet/withdraw") {
+            controller.withdraw(context)
+        }
     }
 }

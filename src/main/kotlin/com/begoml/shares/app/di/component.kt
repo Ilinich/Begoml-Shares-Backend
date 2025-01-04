@@ -8,12 +8,15 @@ import com.begoml.shares.data.database.DatabaseProvider
 import com.begoml.shares.data.repository.encoder.EncoderRepositoryImpl
 import com.begoml.shares.data.repository.token.TokenRepositoryImpl
 import com.begoml.shares.data.repository.user.UserRepositoryImpl
+import com.begoml.shares.data.repository.wallet.UserWalletRateLimiterRepositoryImpl
 import com.begoml.shares.data.repository.wallet.UserWalletRepositoryImpl
 import com.begoml.shares.logic.repositories.encoder.EncoderRepository
 import com.begoml.shares.logic.repositories.token.TokenRepository
 import com.begoml.shares.logic.repositories.user.UserRepository
+import com.begoml.shares.logic.repositories.wallet.UserWalletRateLimiterRepository
 import com.begoml.shares.logic.repositories.wallet.UserWalletRepository
 import com.begoml.shares.logic.services.auth.AuthService
+import com.begoml.shares.logic.services.confirmation.ConfirmationCodeService
 import com.begoml.shares.logic.services.user.UserService
 import com.begoml.shares.logic.services.wallet.UserWalletService
 import com.begoml.shares.presentation.features.auth.login.LoginController
@@ -23,6 +26,7 @@ import mu.KLogger
 import mu.KotlinLogging
 import org.jetbrains.exposed.sql.Database
 import org.koin.dsl.module
+import redis.clients.jedis.Jedis
 
 val moduleControllers = module {
     single { LoginController(authService = get()) }
@@ -32,6 +36,9 @@ val moduleControllers = module {
 
 val moduleServices = module {
     single { UserService(userRepository = get()) }
+
+    single { ConfirmationCodeService() }
+
     single {
         AuthService(
             userRepository = get(),
@@ -40,13 +47,21 @@ val moduleServices = module {
         )
     }
 
-    single { UserWalletService(walletRepository = get()) }
+    single {
+        UserWalletService(
+            walletRepository = get(),
+            rateLimiter = get(),
+        )
+    }
 }
 
 val moduleRepositories = module {
     single<UserRepository> { UserRepositoryImpl(databaseProvider = get()) }
 
     single<UserWalletRepository> { UserWalletRepositoryImpl(databaseProvider = get()) }
+    single<UserWalletRateLimiterRepository> {
+        UserWalletRateLimiterRepositoryImpl(redisClient = get())
+    }
 
     single<TokenRepository> { TokenRepositoryImpl() }
     single<EncoderRepository> { EncoderRepositoryImpl() }
@@ -58,6 +73,7 @@ val moduleTools = module {
 
 val moduleDatabase = module {
     single { provideDatabaseProvider() }
+    single { provideRedisClient() }
 }
 
 fun provideDatabaseProvider(): DatabaseProvider {
@@ -80,4 +96,9 @@ fun provideDatabaseProvider(): DatabaseProvider {
     return DatabaseProvider(
         physicalShards = shards,
     )
+}
+
+fun provideRedisClient(): Jedis {
+    val jedis = Jedis("localhost", 6379)
+    return jedis
 }

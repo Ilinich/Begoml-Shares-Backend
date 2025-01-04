@@ -5,6 +5,7 @@ import com.begoml.shares.data.database.models.wallet.UserWalletData
 import com.begoml.shares.logic.repositories.wallet.UserWallet
 import com.begoml.shares.logic.repositories.wallet.UserWalletRepository
 import com.begoml.shares.logic.repositories.wallet.WalletStatus
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -48,10 +49,10 @@ class UserWalletRepositoryImpl(
         }
     }
 
-    override suspend fun updateBalance(userId: String, newBalance: BigDecimal) {
+    override suspend fun addBalance(userId: String, newBalanceValue: BigDecimal) {
         transaction(databaseProvider.getDatabase(userId)) {
             UserWalletData.update({ UserWalletData.walletId eq userId }) { row ->
-                row[balances] = newBalance
+                row[balances] = balances + newBalanceValue
             }
         }
     }

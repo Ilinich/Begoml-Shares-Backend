@@ -1,10 +1,13 @@
 package com.begoml.shares.logic.services.wallet
 
 import com.begoml.shares.logic.repositories.wallet.UserWallet
+import com.begoml.shares.logic.repositories.wallet.UserWalletRateLimiterRepository
 import com.begoml.shares.logic.repositories.wallet.UserWalletRepository
+import java.math.BigDecimal
 
 class UserWalletService(
     private val walletRepository: UserWalletRepository,
+    private val rateLimiter: UserWalletRateLimiterRepository,
 ) {
 
     suspend fun getWallet(userId: String): UserWallet {
@@ -18,4 +21,14 @@ class UserWalletService(
     suspend fun createWallet(userId: String) {
         return walletRepository.createWallet(userId)
     }
+
+    suspend fun updateName(userId: String, newWalletName: String) {
+        return walletRepository.updateName(userId = userId, newWalletName = newWalletName)
+    }
+
+    suspend fun addBalance(userId: String, newBalance: BigDecimal) {
+        return walletRepository.addBalance(userId = userId, newBalanceValue = newBalance)
+    }
+
+    suspend fun checkRateLimit(userId: String) = rateLimiter.checkRateLimit(userId)
 }

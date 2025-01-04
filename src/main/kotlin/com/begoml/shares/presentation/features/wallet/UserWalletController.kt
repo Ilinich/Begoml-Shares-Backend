@@ -1,13 +1,17 @@
 package com.begoml.shares.presentation.features.wallet
 
 import com.begoml.shares.logic.repositories.wallet.UserWallet
+import com.begoml.shares.logic.services.confirmation.ConfirmationCodeService
 import com.begoml.shares.logic.services.wallet.UserWalletService
 import com.begoml.shares.presentation.tools.safeUser
+import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.request.*
 import io.ktor.server.response.*
 
 class UserWalletController(
     private val walletService: UserWalletService,
+    private val confirmationCodeService: ConfirmationCodeService,
 ) {
 
 
@@ -26,7 +30,54 @@ class UserWalletController(
         walletService.createWallet(userId)
 
         val wallet = requireNotNull(walletService.getWallet(userId))
-        call.respond(wallet.toUserWalletResponse())
+
+        call.respond(HttpStatusCode.Created, wallet.toUserWalletResponse())
+    }
+
+    suspend fun updateName(call: ApplicationCall) {
+        val userId = call.safeUser.userId
+        val params = call.receive<UserWalletNameRemoteParams>()
+
+        walletService.updateName(
+            userId = userId,
+            newWalletName = params.name,
+        )
+
+        call.respond(HttpStatusCode.OK)
+    }
+
+    suspend fun deposit(call: ApplicationCall) {
+        val userId = call.safeUser.userId
+        val params = call.receive<UserWalletDepositRemoteParams>()
+
+        walletService.checkRateLimit(userId)
+
+        if (!verifyConfirmationCode(userId = userId, confirmationCode = params.confirmationCode)) {
+            call.respond(HttpStatusCode.Forbidden, "Invalid confirmation code")
+            return
+        }
+
+        walletService.addBalance(userId = userId, newBalance = params.amount)
+        call.respond(HttpStatusCode.OK, "Deposit successful")
+    }
+
+    suspend fun withdraw(call: ApplicationCall) {
+        val userId = call.safeUser.userId
+        val params = call.receive<UserWalletWithdrawRemoteParams>()
+
+        walletService.checkRateLimit(userId)
+
+        if (!verifyConfirmationCode(userId = userId, confirmationCode = params.confirmationCode)) {
+            call.respond(HttpStatusCode.Forbidden, "Invalid confirmation code")
+            return
+        }
+
+        walletService.addBalance(userId = userId, newBalance = params.amount.negate())
+        call.respond(HttpStatusCode.OK, "Withdrawal successful")
+    }
+
+    private suspend fun verifyConfirmationCode(userId: String, confirmationCode: String): Boolean {
+        return confirmationCodeService.validateCode(userId = userId, confirmationCode = confirmationCode)
     }
 }
 

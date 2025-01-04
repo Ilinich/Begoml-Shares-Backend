@@ -22,3 +22,23 @@ data class UserWalletRemoteResponse(
     @Serializable(with = LocalDateTimeSerializer::class)
     val createdAt: LocalDateTime,
 )
+
+
+@Serializable
+data class UserWalletNameRemoteParams(
+    val name: String,
+)
+
+@Serializable
+data class UserWalletWithdrawRemoteParams(
+    @Serializable(with = BigDecimalSerializer::class)
+    val amount: BigDecimal,
+    val confirmationCode: String,
+)
+
+@Serializable
+data class UserWalletDepositRemoteParams(
+    @Serializable(with = BigDecimalSerializer::class)
+    val amount: BigDecimal,
+    val confirmationCode: String,
+)

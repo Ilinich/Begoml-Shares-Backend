@@ -12,5 +12,5 @@ interface UserWalletRepository {
 
     suspend fun updateStatus(userId: String, walletStatus: WalletStatus)
 
-    suspend fun updateBalance(userId: String, newBalance: BigDecimal)
+    suspend fun addBalance(userId: String, newBalanceValue: BigDecimal)
 }
