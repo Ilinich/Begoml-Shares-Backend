@@ -22,6 +22,7 @@ import com.begoml.shares.logic.services.wallet.UserWalletService
 import com.begoml.shares.presentation.features.auth.login.LoginController
 import com.begoml.shares.presentation.features.auth.registration.RegistrationController
 import com.begoml.shares.presentation.features.user.UserController
+import com.begoml.shares.presentation.features.wallet.UserWalletController
 import mu.KLogger
 import mu.KotlinLogging
 import org.jetbrains.exposed.sql.Database
@@ -32,6 +33,7 @@ val moduleControllers = module {
     single { LoginController(authService = get()) }
     single { RegistrationController(authService = get()) }
     single { UserController(userService = get()) }
+    single { UserWalletController(walletService = get(), confirmationCodeService = get()) }
 }
 
 val moduleServices = module {
