@@ -30,6 +30,23 @@ Rate-Limiting: Redis is used to store and manage the rate limits for various use
 Caching: Redis is also used as an in-memory cache for frequently accessed data, such as user wallet balances and stock prices. This helps reduce the load on the PostgreSQL database and improves the overall performance of the application.
 Redis is configured for persistence through RDB snapshots, ensuring that data is periodically written to disk for durability. In the event of a server restart, the data can be restored from these snapshots.
 
+#### Local Redis Usage
+For local development and testing, you can manage the Redis server using Homebrew:
+
+##### Start Redis Server
+To start the Redis server:
+````bash
+brew services start redis
+````
+This command runs the Redis server as a background service that will automatically restart after a system reboot.
+
+##### Stop Redis Server
+To stop the running Redis server:
+````bash
+brew services stop redis
+````
+This stops the Redis service, which can be restarted later when needed.
+
 ### Database (PostgreSQL):
 PostgreSQL is used as the primary database for storing user data, transactions, stock portfolio details, and more.
 User Wallets: Each user has a wallet in PostgreSQL where their balance, transaction history, and other financial data are stored. The database ensures durability and consistency of the financial records, and it provides complex querying capabilities for reporting and auditing.
