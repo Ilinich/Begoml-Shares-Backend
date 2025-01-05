@@ -82,6 +82,12 @@ class UserWalletController(
                 return@handleExceptions
             }
 
+            val balances = walletService.getWallet(userId).balances
+            if (balances < params.amount) {
+                call.respond(HttpStatusCode.Forbidden, "Insufficient balance")
+                return@handleExceptions
+            }
+
             walletService.addBalance(userId = userId, newBalance = params.amount.negate())
             call.respond(HttpStatusCode.OK, "Withdrawal successful")
         }
