@@ -1,6 +1,7 @@
 package com.begoml.shares.app.plugins.statuspages
 
 import com.begoml.shares.logic.exceptions.CommonException
+import com.begoml.shares.logic.exceptions.RateLimitException
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.statuspages.*
@@ -31,6 +32,14 @@ fun Application.statusPages() {
                 text = "Bad Request",
                 contentType = ContentType.Text.Plain,
                 status = HttpStatusCode.BadRequest,
+            )
+        }
+
+        exception<RateLimitException> { call, cause ->
+            call.respondText(
+                text = cause.message ?: "Too many requests",
+                contentType = ContentType.Text.Plain,
+                status = HttpStatusCode.TooManyRequests,
             )
         }
     }

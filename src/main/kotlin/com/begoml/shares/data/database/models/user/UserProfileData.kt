@@ -1,4 +1,4 @@
-package com.begoml.shares.data.database.models
+package com.begoml.shares.data.database.models.user
 
 import com.begoml.shares.logic.services.user.models.UserProfile
 import org.jetbrains.exposed.dao.id.LongIdTable

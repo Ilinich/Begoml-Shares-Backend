@@ -25,3 +25,5 @@ data class AuthorizationException(
 ) : Throwable(message = message)
 
 class InternalServerErrorException(message: String) : Throwable(message = message)
+
+class RateLimitException(message: String) : Throwable(message = message)

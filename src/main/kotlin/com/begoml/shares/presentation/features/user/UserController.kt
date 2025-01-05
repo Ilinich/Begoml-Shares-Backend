@@ -30,11 +30,13 @@ class UserController(
     }
 
     suspend fun updateUser(call: ApplicationCall) {
-        val updates = call.receive<UpdateUserParams>().toUserUpdates()
-        userService.updateUser(
-            userId = call.safeUser.userId,
-            updates = updates,
-        )
-        call.respond(HttpStatusCode.OK)
+        call.handleExceptions {
+            val updates = call.receive<UpdateUserParams>().toUserUpdates()
+            userService.updateUser(
+                userId = call.safeUser.userId,
+                updates = updates,
+            )
+            call.respond(HttpStatusCode.OK)
+        }
     }
 }

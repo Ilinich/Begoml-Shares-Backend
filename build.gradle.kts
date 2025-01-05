@@ -26,6 +26,8 @@ dependencies {
     implementation(libs.bundles.exposed)
     implementation("org.postgresql:postgresql:42.7.2")
 
+    implementation("redis.clients:jedis:5.2.0")
+
     implementation(libs.koin.ktor)
 
     implementation(libs.kotlin.logging)
