@@ -25,6 +25,7 @@ It ensures data access and management while isolating it from business logic.
 
 
 ### Redis Integration:
+[Redis](https://redis.io/docs/latest/operate/oss_and_stack/install/install-redis/install-redis-on-mac-os/)
 In addition to PostgreSQL for persistent data storage, Redis is used to implement rate-limiting and caching mechanisms within the application.
 Rate-Limiting: Redis is used to store and manage the rate limits for various user actions, such as deposits, withdrawals, and requests. By using Redis, we can efficiently track the number of requests made by a user in a specified time frame (e.g., a day). If a user exceeds the predefined limit (e.g., 10 actions per day), further requests are blocked, preventing abuse and ensuring fair usage.
 Caching: Redis is also used as an in-memory cache for frequently accessed data, such as user wallet balances and stock prices. This helps reduce the load on the PostgreSQL database and improves the overall performance of the application.
