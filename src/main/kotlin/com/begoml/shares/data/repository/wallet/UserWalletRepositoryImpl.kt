@@ -52,8 +52,16 @@ class UserWalletRepositoryImpl(
 
     override suspend fun addBalance(userId: String, newBalanceValue: BigDecimal) {
         transaction(databaseProvider.getDatabase(userId)) {
-            UserWalletData.update({ UserWalletData.walletId eq userId }) { row ->
-                row[balances] = balances + newBalanceValue
+            val currentBalance = UserWalletData
+                .slice(UserWalletData.balances)
+                .select { UserWalletData.userId eq userId }
+                .map { it[UserWalletData.balances] }
+                .firstOrNull() ?: BigDecimal.ZERO
+
+            val newBalance = currentBalance + newBalanceValue
+
+            UserWalletData.update({ UserWalletData.userId eq userId }) { row ->
+                row[balances] = newBalance
             }
         }
     }

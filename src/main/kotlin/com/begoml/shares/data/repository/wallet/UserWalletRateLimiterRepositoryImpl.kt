@@ -13,11 +13,11 @@ class UserWalletRateLimiterRepositoryImpl(
 
         val currentCount = redisClient.get(key)?.toIntOrNull() ?: 0
 
-        if (currentCount >= 10) {
+        if (currentCount >= 3) {
             throw RateLimitException("Too many requests")
         }
 
         redisClient.incr(key)
-        redisClient.expire(key, 60)
+        redisClient.expire(key, 30)
     }
 }
