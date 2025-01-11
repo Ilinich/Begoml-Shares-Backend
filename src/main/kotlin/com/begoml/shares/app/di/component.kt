@@ -1,16 +1,17 @@
 package com.begoml.shares.app.di
 
-import com.begoml.shares.app.DATABASE_PASSWORD
-import com.begoml.shares.app.DATABASE_URL
-import com.begoml.shares.app.DATABASE_URL_SECOND
-import com.begoml.shares.app.DATABASE_USER
+import com.begoml.shares.app.*
+import com.begoml.shares.core.AppQuartzScheduler
+import com.begoml.shares.core.AppQuartzSchedulerImpl
 import com.begoml.shares.data.database.DatabaseProvider
 import com.begoml.shares.data.repository.encoder.EncoderRepositoryImpl
+import com.begoml.shares.data.repository.shares.SharesRepositoryImpl
 import com.begoml.shares.data.repository.token.TokenRepositoryImpl
 import com.begoml.shares.data.repository.user.UserRepositoryImpl
 import com.begoml.shares.data.repository.wallet.UserWalletRateLimiterRepositoryImpl
 import com.begoml.shares.data.repository.wallet.UserWalletRepositoryImpl
 import com.begoml.shares.logic.repositories.encoder.EncoderRepository
+import com.begoml.shares.logic.repositories.shares.SharesRepository
 import com.begoml.shares.logic.repositories.token.TokenRepository
 import com.begoml.shares.logic.repositories.user.UserRepository
 import com.begoml.shares.logic.repositories.wallet.UserWalletRateLimiterRepository
@@ -23,6 +24,12 @@ import com.begoml.shares.presentation.features.auth.login.LoginController
 import com.begoml.shares.presentation.features.auth.registration.RegistrationController
 import com.begoml.shares.presentation.features.user.UserController
 import com.begoml.shares.presentation.features.wallet.UserWalletController
+import com.begoml.shares.presentation.services.SharesNewsUpdateService
+import com.begoml.shares.presentation.services.SharesPriceUpdateService
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.serialization.json.Json
 import mu.KLogger
 import mu.KotlinLogging
 import org.jetbrains.exposed.sql.Database
@@ -34,6 +41,31 @@ val moduleControllers = module {
     single { RegistrationController(authService = get()) }
     single { UserController(userService = get()) }
     single { UserWalletController(walletService = get(), confirmationCodeService = get()) }
+}
+
+val moduleFeatureServices = module {
+    single {
+        SharesPriceUpdateService(
+            scope = get(),
+            logger = get(),
+            sharesRepository = get(),
+        )
+    }
+    single {
+        SharesNewsUpdateService(
+            scope = get(),
+            logger = get(),
+        )
+    }
+}
+
+val moduleCore = module {
+    single<AppQuartzScheduler> {
+        AppQuartzSchedulerImpl(
+            sharesPriceService = get(),
+            sharesNewsService = get(),
+        )
+    }
 }
 
 val moduleServices = module {
@@ -67,10 +99,29 @@ val moduleRepositories = module {
 
     single<TokenRepository> { TokenRepositoryImpl() }
     single<EncoderRepository> { EncoderRepositoryImpl() }
+
+    single<SharesRepository> {
+        SharesRepositoryImpl(
+            databaseProvider = get(),
+            json = get(),
+            redisClient = get(),
+        )
+    }
 }
 
 val moduleTools = module {
-    single<KLogger> { KotlinLogging.logger {} }
+    single { CoroutineScope(SupervisorJob() + Dispatchers.IO) }
+    single<Json> {
+        Json {
+            prettyPrint = true
+            isLenient = true
+            ignoreUnknownKeys = true
+        }
+    }
+}
+
+val loggerModule = module {
+    single<KLogger> { KotlinLogging.logger("BegomlSharesLogger") }
 }
 
 val moduleDatabase = module {
@@ -93,10 +144,18 @@ fun provideDatabaseProvider(): DatabaseProvider {
         password = DATABASE_PASSWORD,
     )
 
+    val shares = Database.connect(
+        url = DATABASE_URL_SHARES,
+        driver = "org.postgresql.Driver",
+        user = DATABASE_USER,
+        password = DATABASE_PASSWORD,
+    )
+
     val shards = listOf(shard1, shard2)
 
     return DatabaseProvider(
         physicalShards = shards,
+        shares = shares,
     )
 }
 

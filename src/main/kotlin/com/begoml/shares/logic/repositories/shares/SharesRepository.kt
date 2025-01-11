@@ -1,0 +1,16 @@
+package com.begoml.shares.logic.repositories.shares
+
+import java.math.BigDecimal
+
+interface SharesRepository {
+
+    suspend fun getShares(): List<Share>
+
+    suspend fun updateShares()
+
+    suspend fun updateSharePrices()
+
+    suspend fun hasShares(): Boolean
+
+    fun getPrices(): Map<String, BigDecimal>
+}
