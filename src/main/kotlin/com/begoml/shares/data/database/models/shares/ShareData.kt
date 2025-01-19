@@ -1,9 +1,11 @@
 package com.begoml.shares.data.database.models.shares
 
 import com.begoml.shares.logic.repositories.shares.Share
+import com.begoml.shares.tools.AppCurrency
 import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.ResultRow
+import java.util.*
 
 internal object ShareData : LongIdTable() {
     val shareId: Column<Long> = long("shareId").uniqueIndex()
@@ -25,6 +27,7 @@ internal object ShareData : LongIdTable() {
             description = row[description],
             logoUrl = row[logoUrl],
             imageUrl = row[imageUrl],
+            currency = AppCurrency.USD,
         )
     }
 }

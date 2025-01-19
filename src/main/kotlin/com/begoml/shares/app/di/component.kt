@@ -22,6 +22,7 @@ import com.begoml.shares.logic.services.user.UserService
 import com.begoml.shares.logic.services.wallet.UserWalletService
 import com.begoml.shares.presentation.features.auth.login.LoginController
 import com.begoml.shares.presentation.features.auth.registration.RegistrationController
+import com.begoml.shares.presentation.features.shares.SharesController
 import com.begoml.shares.presentation.features.user.UserController
 import com.begoml.shares.presentation.features.wallet.UserWalletController
 import com.begoml.shares.presentation.services.SharesNewsUpdateService
@@ -40,6 +41,7 @@ val moduleControllers = module {
     single { LoginController(authService = get()) }
     single { RegistrationController(authService = get()) }
     single { UserController(userService = get()) }
+    single { SharesController(sharesRepository = get()) }
     single { UserWalletController(walletService = get(), confirmationCodeService = get()) }
 }
 

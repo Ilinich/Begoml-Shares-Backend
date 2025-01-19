@@ -2,11 +2,14 @@ package com.begoml.shares.data.repository.shares
 
 import com.begoml.shares.data.database.DatabaseProvider
 import com.begoml.shares.data.database.models.shares.ShareData
+import com.begoml.shares.data.database.models.user.UserData
 import com.begoml.shares.data.remote.ShareDataRemote
 import com.begoml.shares.logic.repositories.shares.Share
 import com.begoml.shares.logic.repositories.shares.SharesRepository
 import kotlinx.serialization.json.Json
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.insertIgnore
+import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import redis.clients.jedis.Jedis
@@ -28,6 +31,13 @@ class SharesRepositoryImpl(
     override suspend fun getShares(): List<Share> {
         return transaction(databaseProvider.getShares()) {
             ShareData.selectAll().map(ShareData::toDomain)
+        }
+    }
+
+    override suspend fun getShare(symbol: String): Share? {
+        return transaction(databaseProvider.getShares()) {
+            ShareData.select { ShareData.symbol eq symbol }
+                .map(ShareData::toDomain).firstOrNull()
         }
     }
 

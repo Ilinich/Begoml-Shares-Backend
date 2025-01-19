@@ -7,4 +7,5 @@ data class Share(
     val description: String,
     val logoUrl: String,
     val imageUrl: String,
+    val currency: String,
 )

@@ -6,6 +6,8 @@ interface SharesRepository {
 
     suspend fun getShares(): List<Share>
 
+    suspend fun getShare(symbol: String): Share?
+
     suspend fun updateShares()
 
     suspend fun updateSharePrices()
