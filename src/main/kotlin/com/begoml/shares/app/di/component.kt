@@ -25,11 +25,11 @@ import com.begoml.shares.presentation.features.auth.registration.RegistrationCon
 import com.begoml.shares.presentation.features.shares.SharesController
 import com.begoml.shares.presentation.features.user.UserController
 import com.begoml.shares.presentation.features.wallet.UserWalletController
-import com.begoml.shares.presentation.services.SharesNewsUpdateService
-import com.begoml.shares.presentation.services.SharesPriceUpdateService
+import com.begoml.shares.presentation.services.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.Channel
 import kotlinx.serialization.json.Json
 import mu.KLogger
 import mu.KotlinLogging
@@ -51,6 +51,7 @@ val moduleFeatureServices = module {
             scope = get(),
             logger = get(),
             sharesRepository = get(),
+            rabbitEmitter = get(),
         )
     }
     single {
@@ -129,6 +130,17 @@ val loggerModule = module {
 val moduleDatabase = module {
     single { provideDatabaseProvider() }
     single { provideRedisClient() }
+}
+
+val rabbitModule = module {
+    single<RabbitMQService> {
+        RabbitMQService(
+            scope = get(),
+            json = get(),
+        )
+    }
+    single<RabbitEmitter> { get<RabbitMQService>() }
+    single<RabbitConsumer> { get<RabbitMQService>() }
 }
 
 fun provideDatabaseProvider(): DatabaseProvider {

@@ -54,5 +54,22 @@ Transactions: All stock transactions (deposits, withdrawals, purchases) are logg
 
 PostgreSQL is configured with a robust schema for handling relationships between users, transactions, and stocks, ensuring data integrity and scalability for the growing application.
 
+### RabbitMQ:
+````bash
+brew install rabbitmq
+
+brew services start rabbitmq
+
+brew services list
+````
+
+### Websockets:
+````bash
+./gradlew :tutorial-server-websockets:run
+````
+Then, you can navigate to the following URLs:
+http://0.0.0.0:8080/static/index.html to view a list of tasks.
+http://0.0.0.0:8080/static/wsClient.html to create a new task.
+
 ### Swagger:
 [Swagger](http://localhost:8080/swagger)

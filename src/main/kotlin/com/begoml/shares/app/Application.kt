@@ -4,8 +4,11 @@ import com.begoml.shares.app.di.*
 import com.begoml.shares.app.plugins.authentication.authentication
 import com.begoml.shares.app.plugins.routing.configureRouting
 import com.begoml.shares.app.plugins.serialization.configureSerialization
+import com.begoml.shares.app.plugins.sockets.configureSockets
 import com.begoml.shares.app.plugins.statuspages.statusPages
 import com.begoml.shares.core.AppQuartzScheduler
+import com.begoml.shares.presentation.services.RabbitMQService
+import io.ktor.client.plugins.websocket.*
 import io.ktor.server.application.*
 import io.ktor.server.cio.*
 import io.ktor.server.engine.*
@@ -47,8 +50,11 @@ fun Application.module() {
         modules(moduleDatabase)
 
         modules(moduleTools)
+        modules(rabbitModule)
         modules(loggerModule)
     }
+
+    configureSockets()
 
     authentication()
     configureRouting()
@@ -56,11 +62,17 @@ fun Application.module() {
     configureSerialization()
 
     startServices()
+    startRabbitMQService()
 }
 
 fun Application.startServices() {
     val appQuartzSchedulerImpl by inject<AppQuartzScheduler>()
     appQuartzSchedulerImpl.start()
+}
+
+fun Application.startRabbitMQService() {
+    val rabbitMQService by inject<RabbitMQService>()
+    rabbitMQService.start()
 }
 
 /**
