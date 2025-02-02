@@ -16,5 +16,9 @@ fun Route.sharesRoutes() {
         get("/shareInfo") {
             controller.getShareInfo(call)
         }
+
+        get("/prices") {
+            controller.getSharesPrices(call)
+        }
     }
 }

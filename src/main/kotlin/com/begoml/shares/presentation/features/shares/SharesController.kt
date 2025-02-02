@@ -39,6 +39,21 @@ class SharesController(
             call.respond(HttpStatusCode.OK, info)
         }
     }
+
+    suspend fun getSharesPrices(call: ApplicationCall) {
+        call.handleExceptions {
+            val prices = sharesRepository.getPrices()
+
+            val newPrices = prices.map {
+                SharePriceResponse(
+                    symbol = it.key,
+                    price = it.value,
+                )
+            }
+
+            call.respond(HttpStatusCode.OK, newPrices)
+        }
+    }
 }
 
 private fun Share.toShareResponse(price: BigDecimal): ShareRemoteResponse {

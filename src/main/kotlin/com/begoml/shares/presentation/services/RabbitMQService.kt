@@ -62,11 +62,9 @@ class RabbitMQService(
         println("Sent: $message")
     }
 
-    override fun consumeMessages(onMessage: (RabbitEvents) -> Unit) {
-        scope.safeLaunch {
-            for (message in channel) {
-                onMessage(message)
-            }
+    override suspend fun consumeMessages(onMessage: suspend (RabbitEvents) -> Unit) {
+        for (message in channel) {
+            onMessage(message)
         }
     }
 }
@@ -76,5 +74,5 @@ interface RabbitEmitter {
 }
 
 interface RabbitConsumer {
-    fun consumeMessages(onMessage: (RabbitEvents) -> Unit)
+    suspend fun consumeMessages(onMessage: suspend (RabbitEvents) -> Unit)
 }

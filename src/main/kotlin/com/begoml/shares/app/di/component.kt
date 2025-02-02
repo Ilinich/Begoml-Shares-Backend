@@ -22,6 +22,8 @@ import com.begoml.shares.logic.services.user.UserService
 import com.begoml.shares.logic.services.wallet.UserWalletService
 import com.begoml.shares.presentation.features.auth.login.LoginController
 import com.begoml.shares.presentation.features.auth.registration.RegistrationController
+import com.begoml.shares.presentation.features.events.SharePriceNotifier
+import com.begoml.shares.presentation.features.events.WebSocketManager
 import com.begoml.shares.presentation.features.shares.SharesController
 import com.begoml.shares.presentation.features.user.UserController
 import com.begoml.shares.presentation.features.wallet.UserWalletController
@@ -58,6 +60,26 @@ val moduleFeatureServices = module {
         SharesNewsUpdateService(
             scope = get(),
             logger = get(),
+        )
+    }
+}
+
+val moduleAppWebSocket = module {
+    single {
+        WebSocketManager(
+            scope = get(),
+            json = get(),
+        )
+    }
+}
+
+val moduleAppEvents = module {
+    single {
+        SharePriceNotifier(
+            scope = get(),
+            sharesRepository = get(),
+            webSocketManager = get(),
+            rabbitConsumer = get(),
         )
     }
 }

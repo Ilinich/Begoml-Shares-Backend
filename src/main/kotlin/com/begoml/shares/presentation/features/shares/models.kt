@@ -35,3 +35,11 @@ data class ShareInfoRemoteResponse(
     @Serializable(with = BigDecimalSerializer::class)
     val price: BigDecimal,
 )
+
+
+@Serializable
+data class SharePriceResponse(
+    val symbol: String,
+    @Serializable(with = BigDecimalSerializer::class)
+    val price: BigDecimal,
+)

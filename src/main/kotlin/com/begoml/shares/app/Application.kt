@@ -45,6 +45,9 @@ fun Application.module() {
         modules(moduleFeatureServices)
         modules(moduleCore)
 
+        modules(moduleAppWebSocket)
+        modules(moduleAppEvents)
+
         modules(moduleServices)
         modules(moduleRepositories)
         modules(moduleDatabase)
@@ -54,15 +57,15 @@ fun Application.module() {
         modules(loggerModule)
     }
 
-    configureSockets()
-
     authentication()
     configureRouting()
     statusPages()
     configureSerialization()
 
-    startServices()
     startRabbitMQService()
+    startServices()
+
+    configureSockets()
 }
 
 fun Application.startServices() {
