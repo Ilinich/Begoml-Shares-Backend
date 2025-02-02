@@ -4,21 +4,30 @@ import com.begoml.shares.app.di.*
 import com.begoml.shares.app.plugins.authentication.authentication
 import com.begoml.shares.app.plugins.routing.configureRouting
 import com.begoml.shares.app.plugins.serialization.configureSerialization
+import com.begoml.shares.app.plugins.sockets.configureSockets
 import com.begoml.shares.app.plugins.statuspages.statusPages
+import com.begoml.shares.core.AppQuartzScheduler
+import com.begoml.shares.presentation.services.RabbitMQService
+import io.ktor.client.plugins.websocket.*
 import io.ktor.server.application.*
 import io.ktor.server.cio.*
 import io.ktor.server.engine.*
+import org.koin.ktor.ext.inject
 import org.koin.ktor.plugin.Koin
 import java.sql.DriverManager
 
 val DATABASE_URL = "jdbc:postgresql://localhost:5432/begoml_share"
 val DATABASE_URL_SECOND = "jdbc:postgresql://localhost:5432/begoml_shares_second"
+
+val DATABASE_URL_SHARES = "jdbc:postgresql://localhost:5432/begoml_shares_shares"
+
 val DATABASE_USER = "postgres"
 val DATABASE_PASSWORD = "Postgres383"
 
 fun main() {
     updatePostgresConfig(DATABASE_URL)
     updatePostgresConfig(DATABASE_URL_SECOND)
+    updatePostgresConfig(DATABASE_URL_SHARES)
 
     embeddedServer(
         factory = CIO,
@@ -32,16 +41,41 @@ fun Application.module() {
 
     install(Koin) {
         modules(moduleControllers)
+
+        modules(moduleFeatureServices)
+        modules(moduleCore)
+
+        modules(moduleAppWebSocket)
+        modules(moduleAppEvents)
+
         modules(moduleServices)
         modules(moduleRepositories)
-        modules(moduleTools)
         modules(moduleDatabase)
+
+        modules(moduleTools)
+        modules(rabbitModule)
+        modules(loggerModule)
     }
 
     authentication()
     configureRouting()
     statusPages()
     configureSerialization()
+
+    startRabbitMQService()
+    startServices()
+
+    configureSockets()
+}
+
+fun Application.startServices() {
+    val appQuartzSchedulerImpl by inject<AppQuartzScheduler>()
+    appQuartzSchedulerImpl.start()
+}
+
+fun Application.startRabbitMQService() {
+    val rabbitMQService by inject<RabbitMQService>()
+    rabbitMQService.start()
 }
 
 /**
@@ -74,13 +108,15 @@ fun updatePostgresConfig(url: String) {
 
                 stmt.execute("SELECT pg_reload_conf();")
 
-                stmt.execute("""
+                stmt.execute(
+                    """
                     DO $$ BEGIN
                         IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'replicator') THEN
                             CREATE ROLE replicator WITH REPLICATION LOGIN PASSWORD 'replicator_password';
                         END IF;
                     END $$;
-                """.trimIndent())
+                """.trimIndent()
+                )
             }
         }
     }.onFailure { exception ->

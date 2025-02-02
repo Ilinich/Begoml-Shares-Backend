@@ -1,5 +1,6 @@
 package com.begoml.shares.data.database
 
+import com.begoml.shares.data.database.models.shares.ShareData
 import com.begoml.shares.data.database.models.user.UserData
 import com.begoml.shares.data.database.models.user.UserProfileData
 import com.begoml.shares.data.database.models.wallet.UserWalletData
@@ -41,6 +42,7 @@ import kotlin.math.absoluteValue
  */
 class DatabaseProvider(
     private val physicalShards: List<Database>,
+    private val shares: Database,
     private val virtualShardCount: Int = 32,
 ) {
 
@@ -59,10 +61,18 @@ class DatabaseProvider(
                 )
             }
         }
+
+        transaction(shares) {
+            SchemaUtils.create(ShareData)
+        }
     }
 
     fun getShards(): List<Database> {
         return physicalShards
+    }
+
+    fun getShares(): Database {
+        return shares
     }
 
     fun getDatabase(userId: String): Database {

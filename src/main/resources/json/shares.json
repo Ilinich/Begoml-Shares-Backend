@@ -1,0 +1,29 @@
+[
+  {
+    "id": 1,
+    "name": "Apple Inc. Common Stock",
+    "symbol": "AAPL",
+    "description": "Apple designs a wide variety of consumer electronic devices, including smartphones (iPhone), tablets (iPad), PCs (Mac), smartwatches (Apple Watch), AirPods, and TV boxes (Apple TV), among others.",
+    "logoUrl": "https://example.com/apple-logo.png",
+    "imageUrl": "https://example.com/apple-image.png",
+    "price": 150.25
+  },
+  {
+    "id": 2,
+    "name": "Alphabet Inc. Class C Capital Stock",
+    "symbol": "GOOG",
+    "description": "Alphabet is a holding company. Internet media giant Google is a wholly owned subsidiary. Google generates 99% of Alphabet revenue, of which more than 85% is from online ads.",
+    "logoUrl": "https://example.com/alphabet-logo.png",
+    "imageUrl": "https://example.com/alphabet-image.png",
+    "price": 280.75
+  },
+  {
+    "id": 3,
+    "name": "Amazon.com, Inc. Common Stock",
+    "symbol": "AMZN",
+    "description": "Amazon is a leading online retailer and one of the highest-grossing e-commerce aggregators, with $386 billion in net sales and approximately $578 billion in estimated physical/digital online gross merchandise volume in 2021.",
+    "logoUrl": "https://example.com/amazon-logo.png",
+    "imageUrl": "https://example.com/amazon-image.png",
+    "price": 345.60
+  }
+]

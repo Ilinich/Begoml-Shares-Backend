@@ -1,10 +1,8 @@
 package com.begoml.shares.tools
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.*
 import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 
 suspend fun <A, B> Iterable<A>.parallelMap(
     context: CoroutineContext = Dispatchers.IO,
@@ -15,4 +13,19 @@ suspend fun <A, B> Iterable<A>.parallelMap(
             action(it)
         }
     }.awaitAll()
+}
+
+fun CoroutineScope.safeLaunch(
+    context: CoroutineContext = EmptyCoroutineContext,
+    start: CoroutineStart = CoroutineStart.DEFAULT,
+    handleException: suspend (throwable: Throwable) -> Unit = {},
+    block: suspend CoroutineScope.() -> Unit,
+): Job {
+    return this.launch(
+        context = context + CoroutineExceptionHandler { _, throwable ->
+            this.launch { handleException.invoke(throwable) }
+        },
+        start = start,
+        block = block,
+    )
 }
