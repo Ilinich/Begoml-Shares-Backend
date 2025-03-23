@@ -3,8 +3,11 @@ package com.begoml.shares.app.plugins.sockets
 import com.begoml.shares.presentation.exceptions.logger
 import com.begoml.shares.presentation.features.events.SharePriceNotifier
 import com.begoml.shares.presentation.features.events.WebSocketManager
+import com.begoml.shares.presentation.tools.UserPrincipal
+import com.begoml.shares.presentation.tools.safeUser
 import io.ktor.serialization.kotlinx.*
 import io.ktor.server.application.*
+import io.ktor.server.auth.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
@@ -26,19 +29,27 @@ fun Application.configureSockets() {
     }
     routing {
 
-        webSocket("/events") {
-            webSocketManager.addSession(this)
-
-            try {
-                for (frame in incoming) {
-                    if (frame is Frame.Close) {
-                        break
-                    }
+        authenticate {
+            webSocket("/events") {
+                val user = call.authentication.principal<UserPrincipal>()
+                if (user == null) {
+                    close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "Unauthorized"))
+                    return@webSocket
                 }
-            } catch (e: Exception) {
-                logger.error(e.message, e)
-            } finally {
-                webSocketManager.removeSession(this)
+
+                webSocketManager.addSession(userId = user.userId, this)
+
+                try {
+                    for (frame in incoming) {
+                        if (frame is Frame.Close) {
+                            break
+                        }
+                    }
+                } catch (e: Exception) {
+                    logger.error(e.message, e)
+                } finally {
+                    webSocketManager.removeSession(user.userId)
+                }
             }
         }
     }
