@@ -23,6 +23,25 @@ The data layer, responsible for handling interactions with external sources, suc
 This module contains repository implementations, data models, and any adapters needed to transform data between layers.
 It ensures data access and management while isolating it from business logic.
 
+### Nginx:
+````bash
+brew install nginx
+
+nginx -v
+
+nano /usr/local/etc/nginx/nginx.conf
+
+tail -f /usr/local/var/log/nginx/access.log
+tail -f /usr/local/var/log/nginx/error.log
+
+Start:
+sudo nginx
+
+sudo nginx -s stop
+
+sudo nginx -s reload
+````
+
 ### Redis Integration:
 [Redis](https://redis.io/docs/latest/operate/oss_and_stack/install/install-redis/install-redis-on-mac-os/)
 In addition to PostgreSQL for persistent data storage, Redis is used to implement rate-limiting and caching mechanisms within the application.
