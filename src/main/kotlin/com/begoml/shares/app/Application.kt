@@ -59,11 +59,13 @@ fun Application.module() {
 }
 
 fun Application.startServices() {
-    val appQuartzSchedulerImpl by inject<AppQuartzScheduler>()
-    appQuartzSchedulerImpl.start()
+    val appQuartzScheduler by inject<AppQuartzScheduler>()
+    appQuartzScheduler.start()
+    environment.monitor.subscribe(ApplicationStopping) { appQuartzScheduler.stop() }
 }
 
 fun Application.startRabbitMQService() {
     val rabbitMQService by inject<RabbitMQService>()
     rabbitMQService.start()
+    environment.monitor.subscribe(ApplicationStopping) { rabbitMQService.stop() }
 }

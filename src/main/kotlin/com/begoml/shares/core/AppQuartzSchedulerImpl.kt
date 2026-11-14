@@ -13,6 +13,8 @@ import org.quartz.Job
 
 interface AppQuartzScheduler {
     fun start()
+
+    fun stop()
 }
 
 class AppQuartzSchedulerImpl(
@@ -30,6 +32,12 @@ class AppQuartzSchedulerImpl(
         const val SHARES_NEWS_UPDATE_JOB = "sharesNewsUpdateJob"
         const val SHARES_NEWS_UPDATE_GROUP = "group2"
         const val SHARES_NEWS_UPDATE_TRIGGER = "sharesNewsUpdateTrigger"
+    }
+
+    private val scheduler by lazy { StdSchedulerFactory.getDefaultScheduler() }
+
+    override fun stop() {
+        scheduler.shutdown(true)
     }
 
     override fun start() {
@@ -61,7 +69,6 @@ class AppQuartzSchedulerImpl(
             )
             .build()
 
-        val scheduler = StdSchedulerFactory.getDefaultScheduler()
         scheduler.context[SHARES_PRICE_UPDATE_SERVICE] = sharesPriceService
         scheduler.context[SHARES_NEWS_UPDATE_SERVICE] = sharesNewsService
 

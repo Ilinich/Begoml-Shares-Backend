@@ -1,12 +1,12 @@
 package com.begoml.shares.logic.services.auth
 
-import com.begoml.shares.data.ext.isEmailValid
+import com.begoml.shares.logic.validation.isEmailValid
 import com.begoml.shares.logic.exceptions.CommonException
+import com.begoml.shares.logic.exceptions.ErrorKind
 import com.begoml.shares.logic.repositories.encoder.EncoderRepository
 import com.begoml.shares.logic.repositories.token.TokenRepository
 import com.begoml.shares.logic.repositories.user.UserRepository
 import com.begoml.shares.logic.services.user.models.User
-import io.ktor.http.*
 
 class AuthService(
     private val userRepository: UserRepository,
@@ -23,7 +23,7 @@ class AuthService(
 
         if (searchUser != null) {
             throw CommonException(
-                status = HttpStatusCode.BadRequest,
+                kind = ErrorKind.BAD_REQUEST,
                 message = "Email already registered!",
             )
         }
@@ -48,7 +48,7 @@ class AuthService(
 
         if (user == null || !passwordValid) {
             throw CommonException(
-                status = HttpStatusCode.BadRequest,
+                kind = ErrorKind.BAD_REQUEST,
                 message = "Invalid email or password",
             )
         }
@@ -62,7 +62,7 @@ class AuthService(
 
     private fun generateJwtToken(user: User): String {
         return tokenRepository.generateJwtToken(user) ?: throw CommonException(
-            status = HttpStatusCode.BadRequest,
+            kind = ErrorKind.BAD_REQUEST,
             message = "Token can not be null",
         )
     }

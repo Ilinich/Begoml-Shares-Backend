@@ -11,7 +11,7 @@ import com.begoml.shares.tools.parallelMap
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.transactions.transaction
+import com.begoml.shares.data.database.dbQuery
 import org.jetbrains.exposed.sql.update
 import java.util.*
 
@@ -20,14 +20,14 @@ class UserRepositoryImpl(
 ) : UserRepository {
 
     override suspend fun findByUserId(userId: String): User? {
-        return transaction(databaseProvider.getDatabase(userId)) {
+        return dbQuery(databaseProvider.getDatabase(userId)) {
             UserData.select { UserData.userId eq userId }
                 .map(UserData::toDomain).firstOrNull()
         }
     }
 
     override suspend fun findByUserProfileId(userId: String): UserProfile? {
-        return transaction(databaseProvider.getDatabase(userId)) {
+        return dbQuery(databaseProvider.getDatabase(userId)) {
             UserProfileData.select { UserProfileData.userId eq userId }
                 .map(UserProfileData::toDomain).firstOrNull()
         }
@@ -37,7 +37,7 @@ class UserRepositoryImpl(
         val shards = databaseProvider.getShards()
 
         val results = shards.parallelMap { shard ->
-            transaction(shard) {
+            dbQuery(shard) {
                 UserData.select { UserData.email eq email }
                     .map(UserData::toDomain)
                     .firstOrNull()
@@ -49,7 +49,7 @@ class UserRepositoryImpl(
     }
 
     override suspend fun updateUser(userId: String, updates: UserUpdates) {
-        transaction(databaseProvider.getDatabase(userId)) {
+        dbQuery(databaseProvider.getDatabase(userId)) {
             val updated = UserProfileData.update({ UserProfileData.userId eq userId }) { row ->
                 if (updates.name != null) {
                     row[username] = updates.name
@@ -71,7 +71,7 @@ class UserRepositoryImpl(
     }
 
     override suspend fun updatePassword(userId: String, password: String) {
-        transaction(databaseProvider.getDatabase(userId)) {
+        dbQuery(databaseProvider.getDatabase(userId)) {
             UserData.update({ UserData.userId eq userId }) { row ->
                 row[UserData.password] = password
             }
@@ -80,7 +80,7 @@ class UserRepositoryImpl(
 
     override suspend fun createUser(email: String, password: String): User {
         val userId = generateUserId()
-        val user = transaction(databaseProvider.getDatabase(userId)) {
+        val user = dbQuery(databaseProvider.getDatabase(userId)) {
             UserData.insertAndGetId { row ->
                 row[UserData.userId] = userId
                 row[UserData.email] = email

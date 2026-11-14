@@ -14,5 +14,7 @@ interface SharesRepository {
 
     suspend fun hasShares(): Boolean
 
-    fun getPrices(): Map<String, BigDecimal>
+    suspend fun getPrices(): Map<String, BigDecimal>
+
+    suspend fun getPrice(symbol: String): BigDecimal?
 }

@@ -1,18 +1,18 @@
 package com.begoml.shares.logic.services.user
 
 import com.begoml.shares.logic.exceptions.CommonException
+import com.begoml.shares.logic.exceptions.ErrorKind
 import com.begoml.shares.logic.repositories.user.UserRepository
 import com.begoml.shares.logic.services.user.models.User
 import com.begoml.shares.logic.services.user.models.UserProfile
 import com.begoml.shares.logic.services.user.models.params.UserUpdates
-import io.ktor.http.*
 
 class UserService(
     private val userRepository: UserRepository,
 ) {
     suspend fun getUser(userId: String): User {
         return userRepository.findByUserId(userId = userId) ?: throw CommonException(
-            status = HttpStatusCode.BadRequest,
+            kind = ErrorKind.BAD_REQUEST,
             message = "User not found"
         )
     }

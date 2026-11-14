@@ -1,6 +1,7 @@
 package com.begoml.shares.app.plugins.statuspages
 
 import com.begoml.shares.logic.exceptions.CommonException
+import com.begoml.shares.logic.exceptions.ErrorKind
 import com.begoml.shares.logic.exceptions.RateLimitException
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -16,7 +17,7 @@ fun Application.statusPages() {
             call.respondText(
                 text = cause.message,
                 contentType = ContentType.Text.Plain,
-                status = cause.status
+                status = cause.kind.toHttpStatus(),
             )
         }
 
@@ -62,4 +63,11 @@ fun Application.statusPages() {
             )
         }
     }
+}
+
+private fun ErrorKind.toHttpStatus(): HttpStatusCode = when (this) {
+    ErrorKind.BAD_REQUEST -> HttpStatusCode.BadRequest
+    ErrorKind.FORBIDDEN -> HttpStatusCode.Forbidden
+    ErrorKind.NOT_FOUND -> HttpStatusCode.NotFound
+    ErrorKind.CONFLICT -> HttpStatusCode.Conflict
 }
