@@ -4,6 +4,7 @@ import com.begoml.shares.app.*
 import com.begoml.shares.core.AppQuartzScheduler
 import com.begoml.shares.core.AppQuartzSchedulerImpl
 import com.begoml.shares.data.database.DatabaseProvider
+import com.begoml.shares.data.tools.JwtConfig
 import com.begoml.shares.data.repository.encoder.EncoderRepositoryImpl
 import com.begoml.shares.data.repository.shares.SharesRepositoryImpl
 import com.begoml.shares.data.repository.token.TokenRepositoryImpl
@@ -37,7 +38,8 @@ import mu.KLogger
 import mu.KotlinLogging
 import org.jetbrains.exposed.sql.Database
 import org.koin.dsl.module
-import redis.clients.jedis.Jedis
+import redis.clients.jedis.JedisPooled
+import redis.clients.jedis.UnifiedJedis
 
 val moduleControllers = module {
     single { LoginController(authService = get()) }
@@ -122,8 +124,9 @@ val moduleRepositories = module {
         UserWalletRateLimiterRepositoryImpl(redisClient = get())
     }
 
-    single<TokenRepository> { TokenRepositoryImpl() }
-    single<EncoderRepository> { EncoderRepositoryImpl() }
+    single { JwtConfig(secret = get<AppConfig>().jwtSecret) }
+    single<TokenRepository> { TokenRepositoryImpl(jwtConfig = get()) }
+    single<EncoderRepository> { EncoderRepositoryImpl(legacySecret = get<AppConfig>().legacyPasswordSecret) }
 
     single<SharesRepository> {
         SharesRepositoryImpl(
@@ -150,8 +153,8 @@ val loggerModule = module {
 }
 
 val moduleDatabase = module {
-    single { provideDatabaseProvider() }
-    single { provideRedisClient() }
+    single { provideDatabaseProvider(config = get()) }
+    single<UnifiedJedis> { provideRedisClient(config = get()) }
 }
 
 val rabbitModule = module {
@@ -159,43 +162,27 @@ val rabbitModule = module {
         RabbitMQService(
             scope = get(),
             json = get(),
+            host = get<AppConfig>().rabbitHost,
+            port = get<AppConfig>().rabbitPort,
         )
     }
     single<RabbitEmitter> { get<RabbitMQService>() }
     single<RabbitConsumer> { get<RabbitMQService>() }
 }
 
-fun provideDatabaseProvider(): DatabaseProvider {
-    val shard1 = Database.connect(
-        url = DATABASE_URL,
+fun provideDatabaseProvider(config: AppConfig): DatabaseProvider {
+    fun connect(url: String) = Database.connect(
+        url = url,
         driver = "org.postgresql.Driver",
-        user = DATABASE_USER,
-        password = DATABASE_PASSWORD,
+        user = config.databaseUser,
+        password = config.databasePassword,
     )
-
-    val shard2 = Database.connect(
-        url = DATABASE_URL_SECOND,
-        driver = "org.postgresql.Driver",
-        user = DATABASE_USER,
-        password = DATABASE_PASSWORD,
-    )
-
-    val shares = Database.connect(
-        url = DATABASE_URL_SHARES,
-        driver = "org.postgresql.Driver",
-        user = DATABASE_USER,
-        password = DATABASE_PASSWORD,
-    )
-
-    val shards = listOf(shard1, shard2)
 
     return DatabaseProvider(
-        physicalShards = shards,
-        shares = shares,
+        physicalShards = config.databaseShardUrls.map(::connect),
+        shares = connect(config.databaseSharesUrl),
     )
 }
 
-fun provideRedisClient(): Jedis {
-    val jedis = Jedis("localhost", 6379)
-    return jedis
-}
+// A single Jedis connection is not thread-safe; JedisPooled borrows a pooled connection per command.
+fun provideRedisClient(config: AppConfig): UnifiedJedis = JedisPooled(config.redisHost, config.redisPort)

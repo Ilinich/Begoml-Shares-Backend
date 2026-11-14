@@ -34,14 +34,20 @@ class UserService(
     }
 
     private fun validRegister(update: UserUpdates) {
-        val age = update.age
+        require(update.name != null || update.age != null) { "Nothing to update." }
 
-        require(
-            age != null
-        ) { "User age is invalid." }
+        update.name?.let { name ->
+            require(name.isNotBlank() && name.length <= MAX_NAME_LENGTH) { "User name is invalid." }
+        }
 
-        require(
-            !update.name.isNullOrBlank()
-        ) { "User name is invalid." }
+        update.age?.let { age ->
+            require(age in MIN_AGE..MAX_AGE) { "User age is invalid." }
+        }
+    }
+
+    private companion object {
+        const val MAX_NAME_LENGTH = 100 // UserProfileData.username is varchar(100)
+        const val MIN_AGE = 0
+        const val MAX_AGE = 150
     }
 }

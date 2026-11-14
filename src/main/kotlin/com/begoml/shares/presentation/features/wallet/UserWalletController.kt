@@ -33,7 +33,7 @@ class UserWalletController(
 
             walletService.createWallet(userId = userId, name = params.name)
 
-            val wallet = requireNotNull(walletService.getWallet(userId))
+            val wallet = walletService.getWallet(userId)
 
             call.respond(HttpStatusCode.Created, wallet.toUserWalletResponse())
         }
@@ -65,7 +65,7 @@ class UserWalletController(
                 return@handleExceptions
             }
 
-            walletService.addBalance(userId = userId, newBalance = params.amount)
+            walletService.deposit(userId = userId, amount = params.amount)
             call.respond(HttpStatusCode.OK, "Deposit successful")
         }
     }
@@ -82,13 +82,7 @@ class UserWalletController(
                 return@handleExceptions
             }
 
-            val balances = walletService.getWallet(userId).balances
-            if (balances < params.amount) {
-                call.respond(HttpStatusCode.Forbidden, "Insufficient balance")
-                return@handleExceptions
-            }
-
-            walletService.addBalance(userId = userId, newBalance = params.amount.negate())
+            walletService.withdraw(userId = userId, amount = params.amount)
             call.respond(HttpStatusCode.OK, "Withdrawal successful")
         }
     }

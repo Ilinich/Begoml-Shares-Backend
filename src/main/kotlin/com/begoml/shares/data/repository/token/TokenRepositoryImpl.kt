@@ -5,12 +5,14 @@ import com.begoml.shares.data.tools.JwtConfig
 import com.begoml.shares.logic.repositories.token.TokenRepository
 import com.begoml.shares.logic.services.user.models.User
 
-class TokenRepositoryImpl : TokenRepository {
+class TokenRepositoryImpl(
+    private val jwtConfig: JwtConfig,
+) : TokenRepository {
 
     override val verifier: JWTVerifier
-        get() = JwtConfig.verifier
+        get() = jwtConfig.verifier
 
-    override fun decodeJWT(token: String) = JwtConfig.decodeJWT(token)
+    override fun decodeJWT(token: String) = jwtConfig.decodeJWT(token)
 
-    override fun generateJwtToken(user: User) = JwtConfig.generateToken(user)
+    override fun generateJwtToken(user: User) = jwtConfig.generateToken(user)
 }

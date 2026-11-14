@@ -15,11 +15,13 @@ import kotlinx.serialization.json.Json
 class RabbitMQService(
     val scope: CoroutineScope,
     val json: Json,
+    host: String,
+    port: Int,
 ) : RabbitEmitter, RabbitConsumer {
 
     private val connectionFactory = ConnectionFactory().apply {
-        host = "localhost"
-        port = 5672
+        this.host = host
+        this.port = port
     }
 
     private val channel = Channel<RabbitEvents>(Channel.UNLIMITED)

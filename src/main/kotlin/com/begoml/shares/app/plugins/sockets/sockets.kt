@@ -48,7 +48,7 @@ fun Application.configureSockets() {
                 } catch (e: Exception) {
                     logger.error(e.message, e)
                 } finally {
-                    webSocketManager.removeSession(user.userId)
+                    webSocketManager.removeSession(userId = user.userId, session = this)
                 }
             }
         }

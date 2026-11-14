@@ -14,6 +14,9 @@ interface UserRepository {
 
     suspend fun createUser(email: String, password: String): User
 
+    suspend fun updatePassword(userId: String, password: String)
+
+    /** Updates the user's profile, creating it if the user does not have one yet. */
     suspend fun updateUser(
         userId: String,
         updates: UserUpdates,

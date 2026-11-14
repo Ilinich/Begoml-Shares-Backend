@@ -5,7 +5,11 @@ import com.begoml.shares.data.database.models.wallet.UserWalletData
 import com.begoml.shares.logic.repositories.wallet.UserWallet
 import com.begoml.shares.logic.repositories.wallet.UserWalletRepository
 import com.begoml.shares.logic.repositories.wallet.WalletStatus
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.greaterEq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.minus
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -50,19 +54,30 @@ class UserWalletRepositoryImpl(
         }
     }
 
-    override suspend fun addBalance(userId: String, newBalanceValue: BigDecimal) {
-        transaction(databaseProvider.getDatabase(userId)) {
-            val currentBalance = UserWalletData
-                .slice(UserWalletData.balances)
-                .select { UserWalletData.userId eq userId }
-                .map { it[UserWalletData.balances] }
-                .firstOrNull() ?: BigDecimal.ZERO
-
-            val newBalance = currentBalance + newBalanceValue
-
-            UserWalletData.update({ UserWalletData.userId eq userId }) { row ->
-                row[balances] = newBalance
+    // Single UPDATE ... SET balances = balances + ? so concurrent requests cannot lose updates.
+    override suspend fun deposit(userId: String, amount: BigDecimal): Boolean {
+        val updated = transaction(databaseProvider.getDatabase(userId)) {
+            UserWalletData.update({
+                (UserWalletData.userId eq userId) and
+                    (UserWalletData.status eq WalletStatus.ACTIVE.name)
+            }) { row ->
+                row.update(UserWalletData.balances, UserWalletData.balances + amount)
             }
         }
+        return updated > 0
+    }
+
+    // The balance check lives in the WHERE clause, so check and debit are one atomic statement.
+    override suspend fun withdraw(userId: String, amount: BigDecimal): Boolean {
+        val updated = transaction(databaseProvider.getDatabase(userId)) {
+            UserWalletData.update({
+                (UserWalletData.userId eq userId) and
+                    (UserWalletData.status eq WalletStatus.ACTIVE.name) and
+                    (UserWalletData.balances greaterEq amount)
+            }) { row ->
+                row.update(UserWalletData.balances, UserWalletData.balances - amount)
+            }
+        }
+        return updated > 0
     }
 }

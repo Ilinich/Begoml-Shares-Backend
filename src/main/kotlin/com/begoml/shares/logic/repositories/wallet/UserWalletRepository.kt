@@ -12,5 +12,15 @@ interface UserWalletRepository {
 
     suspend fun updateStatus(userId: String, walletStatus: WalletStatus)
 
-    suspend fun addBalance(userId: String, newBalanceValue: BigDecimal)
+    /**
+     * Atomically adds [amount] to an ACTIVE wallet.
+     * @return `true` if the balance was changed.
+     */
+    suspend fun deposit(userId: String, amount: BigDecimal): Boolean
+
+    /**
+     * Atomically subtracts [amount] from an ACTIVE wallet whose balance is at least [amount].
+     * @return `true` if the balance was changed.
+     */
+    suspend fun withdraw(userId: String, amount: BigDecimal): Boolean
 }

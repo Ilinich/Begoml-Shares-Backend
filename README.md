@@ -23,6 +23,30 @@ The data layer, responsible for handling interactions with external sources, suc
 This module contains repository implementations, data models, and any adapters needed to transform data between layers.
 It ensures data access and management while isolating it from business logic.
 
+### Configuration:
+The server reads its settings from environment variables. Secrets have no defaults, so the server does not start without them.
+
+| Variable | Required | Default |
+|---|---|---|
+| `DATABASE_PASSWORD` | yes | — |
+| `JWT_SECRET` | yes | — |
+| `DATABASE_USER` | no | `postgres` |
+| `DATABASE_URL_SHARD_1` | no | `jdbc:postgresql://localhost:5432/begoml_share` |
+| `DATABASE_URL_SHARD_2` | no | `jdbc:postgresql://localhost:5432/begoml_shares_second` |
+| `DATABASE_URL_SHARES` | no | `jdbc:postgresql://localhost:5432/begoml_shares_shares` |
+| `REDIS_HOST` / `REDIS_PORT` | no | `localhost` / `6379` |
+| `RABBITMQ_HOST` / `RABBITMQ_PORT` | no | `localhost` / `5672` |
+| `LEGACY_PASSWORD_SECRET` | no | old HMAC key; only verifies pre-bcrypt passwords, which are re-hashed on the next login |
+
+````bash
+DATABASE_PASSWORD=... JWT_SECRET=... ./gradlew run
+````
+
+Tests use in-memory H2 databases and need no running services:
+````bash
+./gradlew test
+````
+
 ### Nginx:
 ````bash
 brew install nginx

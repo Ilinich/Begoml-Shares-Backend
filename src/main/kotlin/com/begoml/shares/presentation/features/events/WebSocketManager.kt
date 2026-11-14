@@ -20,14 +20,20 @@ class WebSocketManager(
     private val scope: CoroutineScope,
 ) {
 
-    private val sessions = ConcurrentHashMap<String, WebSocketServerSession>()
+    // A user may have several connections (multiple devices or tabs).
+    private val sessions = ConcurrentHashMap<String, MutableSet<WebSocketServerSession>>()
 
     fun addSession(userId: String, session: WebSocketServerSession) {
-        sessions[userId] = session
+        sessions.compute(userId) { _, current ->
+            (current ?: ConcurrentHashMap.newKeySet()).apply { add(session) }
+        }
     }
 
-    fun removeSession(userId: String) {
-        sessions.remove(userId)
+    fun removeSession(userId: String, session: WebSocketServerSession) {
+        sessions.computeIfPresent(userId) { _, current ->
+            current.remove(session)
+            current.ifEmpty { null }
+        }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -45,8 +51,8 @@ class WebSocketManager(
             }
             val message = json.encodeToString(newPrices)
 
-            sessions.toList()
-                .parallelMap(Dispatchers.IO.limitedParallelism(500)) { (userId, session) ->
+            sessions.values.flatMap { it.toList() }
+                .parallelMap(Dispatchers.IO.limitedParallelism(500)) { session ->
                     if (session.isActive) {
                         try {
                             // TODO check whether this event should be sent to the user

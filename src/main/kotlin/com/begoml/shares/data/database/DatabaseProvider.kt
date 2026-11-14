@@ -85,6 +85,8 @@ class DatabaseProvider(
         val digest = MessageDigest.getInstance("SHA-256")
         val hashBytes = digest.digest(value.toByteArray())
         val hashCode = hashBytes.fold(0) { acc, byte -> (acc * 31 + byte.toInt()) }
-        return hashCode.absoluteValue % shardCount
+        // abs(Int.MIN_VALUE) is still negative; fold it back into range without remapping existing users.
+        val index = hashCode.absoluteValue % shardCount
+        return if (index < 0) index + shardCount else index
     }
 }
