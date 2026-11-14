@@ -1,16 +1,38 @@
 package com.begoml.shares.data.repository.encoder
 
-import com.begoml.shares.data.tools.Cipher
+import com.auth0.jwt.algorithms.Algorithm
 import com.begoml.shares.logic.repositories.encoder.EncoderRepository
+import org.mindrot.jbcrypt.BCrypt
+import java.security.MessageDigest
 import java.util.*
 
 class EncoderRepositoryImpl(
-    private val base64Encoder: Base64.Encoder = Base64.getEncoder()
+    legacySecret: String,
+    private val logRounds: Int = DEFAULT_LOG_ROUNDS,
 ) : EncoderRepository {
 
-    override fun encrypt(value: String): String {
-        return String(base64Encoder.encode(encryptValue(value)))
+    companion object {
+        private const val DEFAULT_LOG_ROUNDS = 12
+        private const val BCRYPT_PREFIX = "$2"
     }
 
-    private fun encryptValue(data: String?): ByteArray = Cipher.algorithm.sign(data?.toByteArray())
+    private val legacyAlgorithm = Algorithm.HMAC256(legacySecret)
+
+    override fun hash(password: String): String = BCrypt.hashpw(password, BCrypt.gensalt(logRounds))
+
+    override fun verify(password: String, hash: String): Boolean {
+        return if (isBcrypt(hash)) {
+            runCatching { BCrypt.checkpw(password, hash) }.getOrDefault(false)
+        } else {
+            MessageDigest.isEqual(legacyHash(password).toByteArray(), hash.toByteArray())
+        }
+    }
+
+    override fun needsRehash(hash: String): Boolean = !isBcrypt(hash)
+
+    private fun isBcrypt(hash: String) = hash.startsWith(BCRYPT_PREFIX)
+
+    // Pre-bcrypt scheme: Base64(HMAC-SHA256(password)). Kept only to migrate existing users.
+    private fun legacyHash(password: String): String =
+        Base64.getEncoder().encodeToString(legacyAlgorithm.sign(password.toByteArray()))
 }

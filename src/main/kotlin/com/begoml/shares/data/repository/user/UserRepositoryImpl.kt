@@ -8,6 +8,7 @@ import com.begoml.shares.logic.services.user.models.User
 import com.begoml.shares.logic.services.user.models.UserProfile
 import com.begoml.shares.logic.services.user.models.params.UserUpdates
 import com.begoml.shares.tools.parallelMap
+import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -43,18 +44,36 @@ class UserRepositoryImpl(
             }
         }
 
-        return results.firstOrNull()
+        // Each shard answers independently; the user lives on at most one of them.
+        return results.firstNotNullOfOrNull { it }
     }
 
     override suspend fun updateUser(userId: String, updates: UserUpdates) {
         transaction(databaseProvider.getDatabase(userId)) {
-            UserProfileData.update({ UserProfileData.userId eq userId }) { row ->
+            val updated = UserProfileData.update({ UserProfileData.userId eq userId }) { row ->
                 if (updates.name != null) {
                     row[username] = updates.name
                 }
                 if (updates.age != null) {
                     row[age] = updates.age
                 }
+            }
+
+            // Registration does not create a profile row, so the first update has to insert it.
+            if (updated == 0) {
+                UserProfileData.insert { row ->
+                    row[UserProfileData.userId] = userId
+                    row[username] = updates.name.orEmpty()
+                    row[age] = updates.age
+                }
+            }
+        }
+    }
+
+    override suspend fun updatePassword(userId: String, password: String) {
+        transaction(databaseProvider.getDatabase(userId)) {
+            UserData.update({ UserData.userId eq userId }) { row ->
+                row[UserData.password] = password
             }
         }
     }

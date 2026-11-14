@@ -22,7 +22,10 @@ internal object UserWalletData : Table() {
 
     val status: Column<String> = varchar("status", 20).default("ACTIVE")
 
-    private val createdAt: Column<LocalDateTime> = datetime("createdAt").default(LocalDateTime.now())
+    // clientDefault is evaluated per insert; default(LocalDateTime.now()) was evaluated once at class load.
+    private val createdAt: Column<LocalDateTime> = datetime("createdAt").clientDefault { LocalDateTime.now() }
+
+    override val primaryKey = PrimaryKey(walletId)
 
     fun toDomain(row: ResultRow): UserWallet {
         return UserWallet(

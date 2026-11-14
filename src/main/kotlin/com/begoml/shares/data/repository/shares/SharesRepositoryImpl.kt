@@ -12,7 +12,7 @@ import org.jetbrains.exposed.sql.insertIgnore
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
-import redis.clients.jedis.Jedis
+import redis.clients.jedis.UnifiedJedis
 import redis.clients.jedis.params.ScanParams
 import java.io.FileNotFoundException
 import java.math.BigDecimal
@@ -21,7 +21,7 @@ import kotlin.random.Random
 class SharesRepositoryImpl(
     private val json: Json,
     private val databaseProvider: DatabaseProvider,
-    private val redisClient: Jedis,
+    private val redisClient: UnifiedJedis,
 ) : SharesRepository {
 
     companion object {

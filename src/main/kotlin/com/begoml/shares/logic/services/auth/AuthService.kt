@@ -13,7 +13,12 @@ class AuthService(
     private val tokenRepository: TokenRepository,
     private val encoderRepository: EncoderRepository,
 ) {
+    // Checked when the email is unknown, so "no such user" costs as much time as "wrong password".
+    private val dummyHash: String by lazy { encoderRepository.hash("dummy-password") }
+
     suspend fun createUserByEmail(email: String, password: String): String {
+        validateAuthData(email = email, password = password)
+
         val searchUser = userRepository.findUserByEmail(email)
 
         if (searchUser != null) {
@@ -23,11 +28,9 @@ class AuthService(
             )
         }
 
-        validateAuthData(email = email, password = password)
-
         val user = userRepository.createUser(
             email = email,
-            password = encoderRepository.encrypt(password),
+            password = encoderRepository.hash(password),
         )
 
         return generateJwtToken(user)
@@ -35,16 +38,23 @@ class AuthService(
 
     suspend fun loginByEmail(email: String, password: String): String {
         val user = userRepository.findUserByEmail(email = email)
-            ?: throw CommonException(
-                status = HttpStatusCode.BadRequest,
-                message = "User not found!",
-            )
 
-        if (user.password != encoderRepository.encrypt(password)) {
+        val passwordValid = if (user != null) {
+            encoderRepository.verify(password, user.password)
+        } else {
+            encoderRepository.verify(password, dummyHash)
+            false
+        }
+
+        if (user == null || !passwordValid) {
             throw CommonException(
                 status = HttpStatusCode.BadRequest,
-                message = "Password invalid!",
+                message = "Invalid email or password",
             )
+        }
+
+        if (encoderRepository.needsRehash(user.password)) {
+            userRepository.updatePassword(userId = user.id, password = encoderRepository.hash(password))
         }
 
         return generateJwtToken(user)

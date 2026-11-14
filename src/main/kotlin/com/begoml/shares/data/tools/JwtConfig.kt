@@ -8,39 +8,28 @@ import com.begoml.shares.logic.services.user.models.User
 import com.begoml.shares.tools.USER_ID_KEY
 import java.util.*
 
-object JwtConfig {
+class JwtConfig(secret: String) {
 
-    private const val secret = "begoml-shares-secret-key" // System.getenv("JWT_SECRET") ?: "app-token-secret-key"
-
-    private const val issuer = "com.begoml.shares"
-
-    private const val validityInMs = 36_000_00 * 24 // 1 day
+    companion object {
+        private const val ISSUER = "com.begoml.shares"
+        private const val VALIDITY_IN_MS = 24L * 60 * 60 * 1000 // 1 day
+    }
 
     private val algorithm = Algorithm.HMAC512(secret)
 
     val verifier: JWTVerifier = JWT
         .require(algorithm)
-        .withIssuer(issuer)
+        .withIssuer(ISSUER)
         .build()
 
-    /**
-     * Produce a token for this combination of name and password
-     */
     fun generateToken(user: User): String = JWT.create()
         .withSubject("Authentication")
-        .withIssuer(issuer)
+        .withIssuer(ISSUER)
         .withJWTId(UUID.randomUUID().toString())
         .withClaim(USER_ID_KEY, user.id)
-        .withExpiresAt(getExpiration())
+        .withExpiresAt(Date(System.currentTimeMillis() + VALIDITY_IN_MS))
         .withIssuedAt(Date())
         .sign(algorithm)
 
-    fun decodeJWT(token: String): DecodedJWT = JWT.require(algorithm)
-        .build()
-        .verify(token)
-
-    /**
-     * Calculate the expiration Date based on current time + the given validity
-     */
-    private fun getExpiration() = Date(System.currentTimeMillis() + validityInMs)
+    fun decodeJWT(token: String): DecodedJWT = verifier.verify(token)
 }

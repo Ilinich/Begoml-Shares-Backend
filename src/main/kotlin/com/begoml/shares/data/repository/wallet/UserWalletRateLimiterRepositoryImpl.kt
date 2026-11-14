@@ -2,22 +2,28 @@ package com.begoml.shares.data.repository.wallet
 
 import com.begoml.shares.logic.exceptions.RateLimitException
 import com.begoml.shares.logic.repositories.wallet.UserWalletRateLimiterRepository
-import redis.clients.jedis.Jedis
+import redis.clients.jedis.UnifiedJedis
+import redis.clients.jedis.params.SetParams
 
 class UserWalletRateLimiterRepositoryImpl(
-    private val redisClient: Jedis,
+    private val redisClient: UnifiedJedis,
 ) : UserWalletRateLimiterRepository {
 
     override suspend fun checkRateLimit(userId: String) {
         val key = "user_wallet_rate_limit:$userId"
 
-        val currentCount = redisClient.get(key)?.toIntOrNull() ?: 0
+        // Create the window with its TTL only if it does not exist yet, then count atomically.
+        // The window is fixed: later requests do not extend it.
+        redisClient.set(key, "0", SetParams().nx().ex(WINDOW_SECONDS))
+        val count = redisClient.incr(key)
 
-        if (currentCount >= 3) {
+        if (count > MAX_REQUESTS) {
             throw RateLimitException("Too many requests")
         }
+    }
 
-        redisClient.incr(key)
-        redisClient.expire(key, 30)
+    private companion object {
+        const val MAX_REQUESTS = 3L
+        const val WINDOW_SECONDS = 30L
     }
 }
