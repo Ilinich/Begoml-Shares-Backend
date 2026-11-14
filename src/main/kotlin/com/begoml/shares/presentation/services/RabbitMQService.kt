@@ -1,70 +1,84 @@
 package com.begoml.shares.presentation.services
 
 import com.begoml.shares.presentation.tools.RabbitEvents
-import com.begoml.shares.tools.safeLaunch
-import com.rabbitmq.client.Connection
+import com.rabbitmq.client.BuiltinExchangeType
 import com.rabbitmq.client.CancelCallback
+import com.rabbitmq.client.Connection
 import com.rabbitmq.client.ConnectionFactory
 import com.rabbitmq.client.DeliverCallback
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import mu.KLogger
 
+/**
+ * Broadcasts application events to every running instance.
+ *
+ * Events go to a fanout exchange. Each instance consumes from its own server-named,
+ * exclusive, auto-delete queue bound to that exchange, so every instance receives every
+ * event (one shared queue would split events between instances, and each instance would
+ * notify only its own WebSocket clients about some of them).
+ */
 class RabbitMQService(
-    val scope: CoroutineScope,
-    val json: Json,
+    private val json: Json,
+    private val logger: KLogger,
     host: String,
     port: Int,
 ) : RabbitEmitter, RabbitConsumer {
 
+    companion object {
+        private const val EXCHANGE = "begomlShares.events"
+    }
+
     private val connectionFactory = ConnectionFactory().apply {
         this.host = host
         this.port = port
+        isAutomaticRecoveryEnabled = true
     }
 
-    private val channel = Channel<RabbitEvents>(Channel.UNLIMITED)
+    private val events = Channel<RabbitEvents>(Channel.UNLIMITED)
 
     private lateinit var connection: Connection
-    private lateinit var rabbitChannel: com.rabbitmq.client.Channel
 
-    private var job: Job? = null
+    // RabbitMQ channels must not be shared between threads, so publishing and consuming use their own.
+    private lateinit var publishChannel: com.rabbitmq.client.Channel
+    private lateinit var consumeChannel: com.rabbitmq.client.Channel
+    private val publishLock = Any()
 
     fun start() {
         connection = connectionFactory.newConnection()
-        rabbitChannel = connection.createChannel()
-        rabbitChannel.queueDeclare("begomlShares", false, false, false, null)
 
-        job?.cancel()
-        job = scope.safeLaunch {
-            val deliverCallback = DeliverCallback { _, delivery ->
-                val message = String(delivery.body)
-                val event = json.decodeFromString<RabbitEvents>(message)
+        publishChannel = connection.createChannel()
+        publishChannel.exchangeDeclare(EXCHANGE, BuiltinExchangeType.FANOUT, true)
 
-                scope.safeLaunch {
-                    channel.send(event)
-                }
-            }
+        consumeChannel = connection.createChannel()
+        val queue = consumeChannel.queueDeclare().queue
+        consumeChannel.queueBind(queue, EXCHANGE, "")
 
-            rabbitChannel.basicConsume("begomlShares", true, deliverCallback, CancelCallback {})
+        val deliverCallback = DeliverCallback { _, delivery ->
+            runCatching { json.decodeFromString<RabbitEvents>(String(delivery.body)) }
+                .onSuccess { events.trySend(it) }
+                .onFailure { logger.error("Cannot decode RabbitMQ event", it) }
         }
+        consumeChannel.basicConsume(queue, true, deliverCallback, CancelCallback {})
     }
 
     fun stop() {
-        job?.cancel()
-        rabbitChannel.close()
-        connection.close()
+        events.close()
+        runCatching { connection.close() }
+            .onFailure { logger.warn("Failed to close RabbitMQ connection", it) }
     }
 
     override fun emit(message: RabbitEvents) {
-        val jsonMessage = json.encodeToString(message)
-        rabbitChannel.basicPublish("", "begomlShares", null, jsonMessage.toByteArray())
-        println("Sent: $message")
+        val body = json.encodeToString(message).toByteArray()
+        synchronized(publishLock) {
+            publishChannel.basicPublish(EXCHANGE, "", null, body)
+        }
+        logger.debug { "Sent: $message" }
     }
 
     override suspend fun consumeMessages(onMessage: suspend (RabbitEvents) -> Unit) {
-        for (message in channel) {
+        for (message in events) {
             onMessage(message)
         }
     }

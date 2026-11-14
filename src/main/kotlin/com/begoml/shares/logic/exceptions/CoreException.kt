@@ -1,7 +1,5 @@
 package com.begoml.shares.logic.exceptions
 
-import io.ktor.http.*
-
 sealed class CoreException(
     override val message: String,
     override val cause: Throwable?
@@ -10,8 +8,16 @@ sealed class CoreException(
     cause = cause,
 )
 
+/** Transport-agnostic error category; the presentation layer maps it to an HTTP status. */
+enum class ErrorKind {
+    BAD_REQUEST,
+    FORBIDDEN,
+    NOT_FOUND,
+    CONFLICT,
+}
+
 data class CommonException(
-    val status: HttpStatusCode,
+    val kind: ErrorKind,
     override val message: String,
     override val cause: Throwable? = null
 ) : CoreException(message, cause)

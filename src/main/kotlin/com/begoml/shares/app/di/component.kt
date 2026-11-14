@@ -160,8 +160,8 @@ val moduleDatabase = module {
 val rabbitModule = module {
     single<RabbitMQService> {
         RabbitMQService(
-            scope = get(),
             json = get(),
+            logger = get(),
             host = get<AppConfig>().rabbitHost,
             port = get<AppConfig>().rabbitPort,
         )

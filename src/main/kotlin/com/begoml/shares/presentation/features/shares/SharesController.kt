@@ -1,6 +1,7 @@
 package com.begoml.shares.presentation.features.shares
 
 import com.begoml.shares.logic.exceptions.CommonException
+import com.begoml.shares.logic.exceptions.ErrorKind
 import com.begoml.shares.logic.repositories.shares.Share
 import com.begoml.shares.logic.repositories.shares.SharesRepository
 import com.begoml.shares.presentation.exceptions.handleExceptions
@@ -32,10 +33,10 @@ class SharesController(
         call.handleExceptions {
             val symbol = requireNotNull(call.parameters["symbol"])
 
-            val price = sharesRepository.getPrices()[symbol] ?: BigDecimal.ZERO
+            val price = sharesRepository.getPrice(symbol) ?: BigDecimal.ZERO
 
             val share = sharesRepository.getShare(symbol) ?: throw CommonException(
-                status = HttpStatusCode.NotFound,
+                kind = ErrorKind.NOT_FOUND,
                 message = "Share not found",
             )
             val info = share.toShareInfoResponse(price = price)

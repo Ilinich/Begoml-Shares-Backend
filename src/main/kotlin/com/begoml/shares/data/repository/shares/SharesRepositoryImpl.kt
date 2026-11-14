@@ -1,19 +1,18 @@
 package com.begoml.shares.data.repository.shares
 
 import com.begoml.shares.data.database.DatabaseProvider
+import com.begoml.shares.data.database.dbQuery
 import com.begoml.shares.data.database.models.shares.ShareData
-import com.begoml.shares.data.database.models.user.UserData
 import com.begoml.shares.data.remote.ShareDataRemote
 import com.begoml.shares.logic.repositories.shares.Share
 import com.begoml.shares.logic.repositories.shares.SharesRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.insertIgnore
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.transactions.transaction
 import redis.clients.jedis.UnifiedJedis
-import redis.clients.jedis.params.ScanParams
 import java.io.FileNotFoundException
 import java.math.BigDecimal
 import kotlin.random.Random
@@ -25,91 +24,77 @@ class SharesRepositoryImpl(
 ) : SharesRepository {
 
     companion object {
-        private const val PRICE_KEY = "share_price_symbol_"
+        // All prices live in one hash (symbol -> price): reading them is a single HGETALL
+        // instead of KEYS, which scans the whole keyspace and blocks Redis.
+        internal const val PRICES_KEY = "share_prices"
     }
 
     override suspend fun getShares(): List<Share> {
-        return transaction(databaseProvider.getShares()) {
+        return dbQuery(databaseProvider.getShares()) {
             ShareData.selectAll().map(ShareData::toDomain)
         }
     }
 
     override suspend fun getShare(symbol: String): Share? {
-        return transaction(databaseProvider.getShares()) {
+        return dbQuery(databaseProvider.getShares()) {
             ShareData.select { ShareData.symbol eq symbol }
                 .map(ShareData::toDomain).firstOrNull()
         }
     }
 
     override suspend fun hasShares(): Boolean {
-        return transaction(databaseProvider.getShares()) {
+        return dbQuery(databaseProvider.getShares()) {
             ShareData.selectAll().limit(1).count() > 0
         }
     }
 
-    override fun getPrices(): Map<String, BigDecimal> {
-        val keys = redisClient.keys("$PRICE_KEY*")
-        val prices = mutableMapOf<String, BigDecimal>()
+    override suspend fun getPrices(): Map<String, BigDecimal> = withContext(Dispatchers.IO) {
+        redisClient.hgetAll(PRICES_KEY)
+            .mapNotNull { (symbol, price) -> price.toBigDecimalOrNull()?.let { symbol to it } }
+            .toMap()
+    }
 
-        keys.forEach { key ->
-            val price = redisClient.get(key)?.toBigDecimalOrNull()
-            if (price != null) {
-                prices[key.removePrefix(PRICE_KEY)] = price
-            }
-        }
-
-        return prices
+    override suspend fun getPrice(symbol: String): BigDecimal? = withContext(Dispatchers.IO) {
+        redisClient.hget(PRICES_KEY, symbol)?.toBigDecimalOrNull()
     }
 
     override suspend fun updateSharePrices() {
-        val cursor = "0"
-        val scanParams = ScanParams().match("$PRICE_KEY*")
-        val priceEntries = mutableListOf<Pair<String, String>>()
+        // Symbols come from the database, the source of truth, not from whatever is cached in Redis.
+        val symbols = getShares().map { it.symbol }
+        if (symbols.isEmpty()) return
 
-        var currentCursor = cursor
-        do {
-            val scanResult = redisClient.scan(currentCursor, scanParams)
-
-            val symbols = scanResult.result.map { it.removePrefix(PRICE_KEY) }
-            val prices = loadPrices(symbols.toSet())
-
-            prices.forEach { (symbol, price) ->
-                priceEntries.add("$PRICE_KEY$symbol" to price.toString())
-            }
-
-            currentCursor = scanResult.cursor
-        } while (currentCursor != "0")
-
-        if (priceEntries.isNotEmpty()) {
-            redisClient.mset(*priceEntries.flatMap { listOf(it.first, it.second) }.toTypedArray())
+        val prices = loadPrices(symbols).mapValues { (_, price) -> price.toPlainString() }
+        withContext(Dispatchers.IO) {
+            redisClient.hset(PRICES_KEY, prices)
         }
     }
 
-    private fun loadPrices(symbols: Set<String>): List<Pair<String, BigDecimal>> {
-        return symbols.map {
-            it to Random.nextDouble(0.05, 999.0).toBigDecimal()
-        }
+    // TODO replace with a real market data source
+    private fun loadPrices(symbols: List<String>): Map<String, BigDecimal> {
+        return symbols.associateWith { Random.nextDouble(0.05, 999.0).toBigDecimal() }
     }
 
     override suspend fun updateShares() {
         val shares = loadSharesFromJsonFile()
+            .filter { it.shareId != null && it.symbol != null }
 
-        transaction(databaseProvider.getShares()) {
+        dbQuery(databaseProvider.getShares()) {
             shares.forEach { share ->
-                val symbolValue = share.symbol
-                val shareIdValue = share.shareId
-                if (shareIdValue != null && symbolValue != null) {
-                    ShareData.insertIgnore {
-                        it[shareId] = shareIdValue
-                        it[symbol] = symbolValue
-                        it[name] = share.name.orEmpty()
-                        it[description] = share.description.orEmpty()
-                        it[logoUrl] = share.logoUrl.orEmpty()
-                        it[imageUrl] = share.imageUrl.orEmpty()
-                    }
-
-                    redisClient.set("$PRICE_KEY$symbolValue", share.price.toString())
+                ShareData.insertIgnore {
+                    it[shareId] = share.shareId!!
+                    it[symbol] = share.symbol!!
+                    it[name] = share.name.orEmpty()
+                    it[description] = share.description.orEmpty()
+                    it[logoUrl] = share.logoUrl.orEmpty()
+                    it[imageUrl] = share.imageUrl.orEmpty()
                 }
+            }
+        }
+
+        val prices = shares.associate { it.symbol!! to (it.price ?: BigDecimal.ZERO).toPlainString() }
+        if (prices.isNotEmpty()) {
+            withContext(Dispatchers.IO) {
+                redisClient.hset(PRICES_KEY, prices)
             }
         }
     }

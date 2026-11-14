@@ -12,7 +12,7 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.transactions.transaction
+import com.begoml.shares.data.database.dbQuery
 import org.jetbrains.exposed.sql.update
 import java.math.BigDecimal
 import java.util.*
@@ -22,14 +22,14 @@ class UserWalletRepositoryImpl(
 ) : UserWalletRepository {
 
     override suspend fun findWalletByUserId(userId: String): UserWallet? {
-        return transaction(databaseProvider.getDatabase(userId)) {
+        return dbQuery(databaseProvider.getDatabase(userId)) {
             UserWalletData.select { UserWalletData.userId eq userId }
                 .map(UserWalletData::toDomain).firstOrNull()
         }
     }
 
     override suspend fun createWallet(userId: String, name: String) {
-        transaction(databaseProvider.getDatabase(userId)) {
+        dbQuery(databaseProvider.getDatabase(userId)) {
             UserWalletData.insert { row ->
                 row[walletId] = UUID.randomUUID().toString()
                 row[UserWalletData.name] = name
@@ -39,7 +39,7 @@ class UserWalletRepositoryImpl(
     }
 
     override suspend fun updateName(userId: String, newWalletName: String) {
-        transaction(databaseProvider.getDatabase(userId)) {
+        dbQuery(databaseProvider.getDatabase(userId)) {
             UserWalletData.update({ UserWalletData.userId eq userId }) { row ->
                 row[name] = newWalletName
             }
@@ -47,7 +47,7 @@ class UserWalletRepositoryImpl(
     }
 
     override suspend fun updateStatus(userId: String, walletStatus: WalletStatus) {
-        transaction(databaseProvider.getDatabase(userId)) {
+        dbQuery(databaseProvider.getDatabase(userId)) {
             UserWalletData.update({ UserWalletData.userId eq userId }) { row ->
                 row[status] = walletStatus.name
             }
@@ -56,7 +56,7 @@ class UserWalletRepositoryImpl(
 
     // Single UPDATE ... SET balances = balances + ? so concurrent requests cannot lose updates.
     override suspend fun deposit(userId: String, amount: BigDecimal): Boolean {
-        val updated = transaction(databaseProvider.getDatabase(userId)) {
+        val updated = dbQuery(databaseProvider.getDatabase(userId)) {
             UserWalletData.update({
                 (UserWalletData.userId eq userId) and
                     (UserWalletData.status eq WalletStatus.ACTIVE.name)
@@ -69,7 +69,7 @@ class UserWalletRepositoryImpl(
 
     // The balance check lives in the WHERE clause, so check and debit are one atomic statement.
     override suspend fun withdraw(userId: String, amount: BigDecimal): Boolean {
-        val updated = transaction(databaseProvider.getDatabase(userId)) {
+        val updated = dbQuery(databaseProvider.getDatabase(userId)) {
             UserWalletData.update({
                 (UserWalletData.userId eq userId) and
                     (UserWalletData.status eq WalletStatus.ACTIVE.name) and
